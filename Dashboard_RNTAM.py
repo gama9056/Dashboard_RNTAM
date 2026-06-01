@@ -10,8 +10,8 @@ st.markdown("""
     .title-container {
         border: 1px solid #2c5f2d;       /* Define el marco: grosor (2px), estilo (solid = línea continua) y el color en hexadecimal (verde). */
         border-radius: 12px;             /* Redondea las esquinas de la caja. A más píxeles, más redondas se verán. */
-        padding: 3px 20px;              /* El espacio interno: 3px arriba/abajo y 20px a los lados entre el texto y el borde verde. */
-        margin-bottom: 25px;             /* El espacio externo inferior: separa la caja del título de lo que pongas abajo (las columnas). */
+        padding: 0px 20px;              /* El espacio interno: 3px arriba/abajo y 20px a los lados entre el texto y el borde verde. */
+        margin-bottom: 15px;             /* El espacio externo inferior: separa la caja del título de lo que pongas abajo (las columnas). */
         background-color: #fefef7;       /* El color de fondo de la caja (en este caso, un tono hueso/crema muy suave). */
         box-shadow: 0 4px 10px rgba(0,0,0,0.03); /* Crea una sombra sutil abajo de la caja para darle un efecto flotante o de relieve. */
         text-align: center;              /* Centra horizontalmente todo el contenido (texto o emojis) que metas dentro de la caja. */
