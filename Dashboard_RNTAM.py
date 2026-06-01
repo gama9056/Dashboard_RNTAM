@@ -80,3 +80,6 @@ st.markdown("""
 </div>
 <hr style="margin: 15px 0; border-color: #d4e6d4;">
 """, unsafe_allow_html=True)
+
+# Primera fila de columnas (25% - 50% - 25%)
+col_left, col_center, col_right = st.columns([1, 2, 1])
