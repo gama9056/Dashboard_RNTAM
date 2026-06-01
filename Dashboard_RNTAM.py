@@ -31,12 +31,21 @@ st.markdown("""
         height: 60px;                    /* 📐 PERSONALIZAR: Altura de la caja. Sube a 70px u 80px si notas el texto muy ajustado */
     }
 
+    /* 🚀 NUEVO: Estilo personalizado para la línea divisoria */
+    .custom-hr {
+        border: 0;
+        height: 1px;                     /* 📐 PERSONALIZAR: Grosor de la línea (ej. 2px si la quieres más marcada) */
+        background-color: #d4e6d4;       /* 🎨 PERSONALIZAR: Color de la línea (un verde grisáceo muy sutil) */
+        margin-top: 10px;                /* Separación con la caja del título */
+        margin-bottom: 25px;             /* Separación con el contenido de abajo */
+    }
+
     /* Columnas laterales decorativas (Paneles Izquierdo y Derecho) */
     .side-decor {
         background-color: #eaf7ea;       /* 🎨 PERSONALIZAR: Color de fondo verde claro natural */
         min-height: 500px;               /* 📐 PERSONALIZAR: Altura mínima de las cajas laterales para estirarlas hacia abajo */
         border-radius: 12px;             /* 📐 PERSONALIZAR: Redondeo de esquinas de las cajas laterales */
-        padding: 20px;                   /* 📐 PERSONALIZAR: Espacio interno para que el texto no choque con los bordes */
+        padding: 20px;                   /* 📐 PERSONALIZAR: Espacio interno para que el texto no toque los bordes */
         color: #2c5f2d;                  /* 🎨 PERSONALIZAR: Color de las letras y títulos dentro de estos paneles */
         border: 1px dashed #97bc62;      /* 🎨 PERSONALIZAR: Estilo del borde: grosor (1px), estilo (dashed = punteado) y color */
         text-align: center;              /* Centra todo el contenido horizontalmente */
@@ -64,6 +73,11 @@ st.markdown("""
     </h2>
 </div>
 """, unsafe_allow_html=True)
+
+# ===========================================================================
+# 🚀 NUEVO: LÍNEA DIVISORIA ENTRE EL TÍTULO Y LOS CUADROS
+# ===========================================================================
+st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 
 # ===========================================================================
 # 2. 🏢 ESTRUCTURA DE COLUMNAS PRINCIPALES (FILA 1: 25% - 50% - 25%)
