@@ -68,3 +68,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+# ========== CONTENEDOR PRINCIPAL (TODO DENTRO DEL BORDE) ==========
+# Abrimos el contenedor principal
+st.markdown('<div class="main-border">', unsafe_allow_html=True)
+
