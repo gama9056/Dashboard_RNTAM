@@ -3,8 +3,10 @@ import streamlit as st
 # ========== CONFIGURACIÓN DE PÁGINA ==========
 st.set_page_config(page_title="Dashboard RNTambopata", layout="wide", page_icon="🌿")
 
-# ========== DISEÑO DE CUADRÍCULA SIMÉTRICA (ESQUELETO VACÍO MEJORADO) ==========
-/* Caja contenedora del Título Principal */
+# ========== DISEÑO DE ESTILOS CSS CORREGIDO ==========
+st.markdown("""
+<style>
+    /* Caja contenedora del Título Principal */
     .title-container {
         border: 2px solid #2c5f2d; /* Verde oscuro natural */
         border-radius: 12px;
@@ -14,6 +16,8 @@ st.set_page_config(page_title="Dashboard RNTambopata", layout="wide", page_icon=
         box-shadow: 0 4px 10px rgba(0,0,0,0.03);
         text-align: center;
     }
+</style>
+""", unsafe_allow_html=True)
 
 # ===========================================================================
 # 1. 📦 CAJA DEL TÍTULO PRINCIPAL (AISLADA EN SU PROPIO CUADRO VERDE)
