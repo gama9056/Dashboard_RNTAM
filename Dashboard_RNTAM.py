@@ -27,8 +27,5 @@ st.markdown("""
     <h2 style="color: #1e3a1e; margin: 0; padding-bottom: 5px; font-size: 1.8rem; font-weight: bold;">
         🌿 DASHBOARD - RESERVA NACIONAL TAMBOPATA 🌿
     </h2>
-    <p style="color: #4a6b3c; margin: 0; font-size: 1rem;">
-        Monitoreo de biodiversidad, visitas y conservación
-    </p>
 </div>
 """, unsafe_allow_html=True)
