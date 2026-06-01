@@ -24,11 +24,11 @@ st.markdown("""
         background-color: #fefef7;       
         box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
         
-        /* 🚀 NUEVO: Sistema Flexbox para centrado vertical perfecto */
+        /* Sistema Flexbox para centrado vertical perfecto */
         display: flex;
-        align-items: center;        /* Centra el texto verticalmente de forma matemática */
+        align-items: center;        /* Centra el texto verticalmente */
         justify-content: center;     /* Centra el texto horizontalmente */
-        height: 60px;               /* 💡 GRADUACIÓN: Cambia este número (ej. 50px, 70px) para hacer la caja más delgada o alta */
+        height: 60px;               /* Altura controlada de la caja */
     }
 </style>
 """, unsafe_allow_html=True)
@@ -38,7 +38,6 @@ st.markdown("""
 # ===========================================================================
 st.markdown("""
 <div class="title-container">
-    /* 🚀 CAMBIO: Quitamos padding-bottom y dejamos margin: 0 para evitar que empuje el texto hacia abajo */
     <h2 style="color: #1e3a1e; margin: 0; font-size: 1.8rem; font-weight: bold; line-height: 1;">
         🌿 DASHBOARD - RESERVA NACIONAL TAMBOPATA 🌿
     </h2>
