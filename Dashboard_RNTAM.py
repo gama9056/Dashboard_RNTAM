@@ -8,8 +8,8 @@ st.markdown("""
 <style>
     /* 🚀 NUEVO: Quitar espacio superior de la app */
     .block-container {
-        padding-top: 3rem !important;    /* Reduce el espacio interno superior de la página (por defecto suele ser 6rem). */
-        padding-bottom: 3rem !important; /* Ajusta el espacio de abajo para que quede simétrico. */
+        padding-top: 2rem !important;    /* Reduce el espacio interno superior de la página (por defecto suele ser 6rem). */
+        padding-bottom: 2rem !important; /* Ajusta el espacio de abajo para que quede simétrico. */
     }
 
     .stAppViewMain > div {
