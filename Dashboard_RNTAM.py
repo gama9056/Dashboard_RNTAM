@@ -30,6 +30,27 @@ st.markdown("""
         justify-content: center;         /* Mantiene el texto centrado horizontalmente */
         height: 60px;                    /* 📐 PERSONALIZAR: Altura de la caja. Sube a 70px u 80px si notas el texto muy ajustado */
     }
+
+    /* Columnas laterales decorativas (Paneles Izquierdo y Derecho) */
+    .side-decor {
+        background-color: #eaf7ea;       /* 🎨 PERSONALIZAR: Color de fondo verde claro natural */
+        min-height: 500px;               /* 📐 PERSONALIZAR: Altura mínima de las cajas laterales para estirarlas hacia abajo */
+        border-radius: 12px;             /* 📐 PERSONALIZAR: Redondeo de esquinas de las cajas laterales */
+        padding: 20px;                   /* 📐 PERSONALIZAR: Espacio interno para que el texto no choque con los bordes */
+        color: #2c5f2d;                  /* 🎨 PERSONALIZAR: Color de las letras y títulos dentro de estos paneles */
+        border: 1px dashed #97bc62;      /* 🎨 PERSONALIZAR: Estilo del borde: grosor (1px), estilo (dashed = punteado) y color */
+        text-align: center;              /* Centra todo el contenido horizontalmente */
+    }
+
+    /* Contenedor temporal para el área del Mapa Central */
+    .map-container {
+        background-color: #e2f0e2;       /* 🎨 PERSONALIZAR: Fondo verde sutil para identificar el espacio del mapa */
+        border-radius: 12px;             /* 📐 PERSONALIZAR: Redondeo de las esquinas del cuadro del mapa */
+        padding: 60px 20px;              /* 📐 PERSONALIZAR: Espacio vertical (60px) para darle grosor/altura inicial a la caja */
+        text-align: center;              /* Centra horizontalmente los textos y emojis del mapa */
+        color: #2c5f2d;                  /* 🎨 PERSONALIZAR: Color de las letras temporales del mapa */
+        margin-top: 10px;                /* Separación externa con el título superior de la sección */
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -51,18 +72,30 @@ col_left, col_center, col_right = st.columns([1, 2, 1])
 
 # ===== 🟢 COLUMNA IZQUIERDA (25%) - PANEL DE FILTROS / INFO =====
 with col_left:
-    st.subheader("🌱 Panel de Control")
-    st.write("Aquí colocaremos los filtros interactivos más adelante.")
-    # Dejamos este espacio listo para maquetar
+    st.markdown('<div class="side-decor">', unsafe_allow_html=True)
+    st.markdown("🌱 **PANEL DE CONTROL**")
+    st.markdown("---")
+    st.markdown("🔍 **Filtros rápidos**")
+    st.markdown("*(Espacio interactivo para filtros futuros)*")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# ===== 🔵 COLUMNA CENTRAL (50%) - CONTENIDO PRINCIPAL =====
+# ===== 🔵 COLUMNA CENTRAL (50%) - CONTENIDO PRINCIPAL Y MAPA =====
 with col_center:
-    st.subheader("📊 Monitoreo Principal")
-    st.write("Aquí estructuraremos las tarjetas de métricas y el mapa.")
-    # Dejamos este espacio listo para maquetar
+    # Título de sección usando HTML limpio para conservar el estilo natural
+    st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: 600; margin: 0;">🗺️ ZONIFICACIÓN Y MONITOREO</h3>', unsafe_allow_html=True)
+    
+    # Caja contenedora del Mapa
+    st.markdown("""
+    <div class="map-container">
+        🗺️ <strong>MAPA INTERACTIVO DE LA RESERVA</strong><br>
+        (Aquí se integrará el visor de mapas con las capas geoespaciales correspondientes)
+    </div>
+    """, unsafe_allow_html=True)
 
 # ===== 🟡 COLUMNA DERECHA (25%) - ALERTAS / ACTIVIDAD =====
 with col_right:
-    st.subheader("📢 Actividad Reciente")
-    st.write("Aquí irán las alertas en tiempo real y datos del clima.")
-    # Dejamos este espacio listo para maquetar
+    st.markdown('<div class="side-decor">', unsafe_allow_html=True)
+    st.markdown("📢 **ACTIVIDAD RECIENTE**")
+    st.markdown("---")
+    st.markdown("• Monitoreo activo en la reserva sin novedades.")
+    st.markdown("</div>", unsafe_allow_html=True)
