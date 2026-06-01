@@ -43,3 +43,26 @@ st.markdown("""
     </h2>
 </div>
 """, unsafe_allow_html=True)
+
+# ===========================================================================
+# 2. 🏢 ESTRUCTURA DE COLUMNAS PRINCIPALES (FILA 1: 25% - 50% - 25%)
+# ===========================================================================
+col_left, col_center, col_right = st.columns([1, 2, 1])
+
+# ===== 🟢 COLUMNA IZQUIERDA (25%) - PANEL DE FILTROS / INFO =====
+with col_left:
+    st.subheader("🌱 Panel de Control")
+    st.write("Aquí colocaremos los filtros interactivos más adelante.")
+    # Dejamos este espacio listo para maquetar
+
+# ===== 🔵 COLUMNA CENTRAL (50%) - CONTENIDO PRINCIPAL =====
+with col_center:
+    st.subheader("📊 Monitoreo Principal")
+    st.write("Aquí estructuraremos las tarjetas de métricas y el mapa.")
+    # Dejamos este espacio listo para maquetar
+
+# ===== 🟡 COLUMNA DERECHA (25%) - ALERTAS / ACTIVIDAD =====
+with col_right:
+    st.subheader("📢 Actividad Reciente")
+    st.write("Aquí irán las alertas en tiempo real y datos del clima.")
+    # Dejamos este espacio listo para maquetar
