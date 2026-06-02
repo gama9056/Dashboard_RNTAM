@@ -2,5 +2,5 @@ streamlit
 pandas
 folium
 streamlit-folium
-st-files-connection
-gspread
+geopandas
+shapely
