@@ -69,10 +69,8 @@ def cargar_capas_geograficas():
     def limpiar_columnas_tiempo(gdf):
         if gdf is None or gdf.empty:
             return gdf
-        # Convertir tipos datetime/timedelta nativos a texto
         for col in gdf.select_dtypes(include=['datetime64', 'timedelta64']).columns:
             gdf[col] = gdf[col].astype(str)
-        # Buscar columnas tipo objeto que puedan contener timestamps o textos sospechosos
         for col in gdf.select_dtypes(include=['object']).columns:
             col_lower = col.lower()
             if 'fecha' in col_lower or 'felea' in col_lower or 'date' in col_lower:
@@ -117,11 +115,24 @@ def cargar_capas_geograficas():
         gdf_za = limpiar_columnas_tiempo(gdf_za)
     else:
         gdf_za = gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:4326")
-        
-    return gdf_ambitos, gdf_anp, gdf_za
 
-# Ejecutamos la lectura real limpia de datos
-gdf_ambitos, gdf_anp, gdf_za = cargar_capas_geograficas()
+    # 4. CARGA DE PUNTOS: PUESTOS DE VIGILANCIA Y CONTROL (PVC)
+    ruta_pvc_puntos = "data/PVC_RNTAM.zip"
+    if os.path.exists(ruta_pvc_puntos):
+        gdf_pvc_pts = gpd.read_file(f"zip://{ruta_pvc_puntos}").to_crs("EPSG:4326")
+        gdf_pvc_pts = limpiar_columnas_tiempo(gdf_pvc_pts)
+        
+        # Homologar nombre de columna común para identificar los puestos
+        for col in gdf_pvc_pts.columns:
+            if col.lower() in ['nom_pvc', 'nombre', 'pvc', 'puesto']:
+                gdf_pvc_pts['NOM_PVC'] = gdf_pvc_pts[col]
+    else:
+        gdf_pvc_pts = gpd.GeoDataFrame(columns=["geometry", "NOM_PVC"], crs="EPSG:4326")
+        
+    return gdf_ambitos, gdf_anp, gdf_za, gdf_pvc_pts
+
+# Ejecutamos la carga limpia de datos
+gdf_ambitos, gdf_anp, gdf_za, gdf_pvc_pts = cargar_capas_geograficas()
 lista_pvc = sorted(gdf_ambitos["NOM_PVC"].unique().tolist()) if not gdf_ambitos.empty else []
 
 # ==========================================================
@@ -167,8 +178,16 @@ if pvc_seleccionados and not gdf_ambitos.empty:
     cant_visitantes = (8942 // 9) * factor
     cant_alertas = max(1, factor - 6)
     texto_delta = f"{factor} PVC seleccionados"
+    
+    # Filtrar también los puntos que coincidan con la selección
+    if not gdf_pvc_pts.empty and 'NOM_PVC' in gdf_pvc_pts.columns:
+        gdf_pvc_filtrado = gdf_pvc_pts[gdf_pvc_pts["NOM_PVC"].isin(pvc_seleccionados)]
+    else:
+        gdf_pvc_filtrado = gdf_pvc_pts.copy()
 else:
     gdf_filtrado = gdf_ambitos.copy()
+    gdf_pvc_filtrado = gdf_pvc_pts.copy()
+    
     if not gdf_anp.empty:
         bounds = gdf_anp.total_bounds
     elif not gdf_ambitos.empty:
@@ -198,7 +217,7 @@ with col_center:
     centro_mapa = [(bounds[1] + bounds[3]) / 2, (bounds[0] + bounds[2]) / 2]
     m = folium.Map(location=centro_mapa, zoom_start=10, control_scale=True)
     
-    # URL del mapa satelital blindada en una sola variable limpia
+    # URL del mapa satelital
     url_satelite = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
     
     folium.TileLayer(
@@ -247,6 +266,22 @@ with col_center:
                 'weight': 3
             }
         ).add_to(m)
+
+    # 4. DIBUJAR MARCADORES INTERACTIVOS: PUESTOS (PUNTOS)
+    if not gdf_pvc_filtrado.empty:
+        fg_puestos = folium.FeatureGroup(name="📍 Puestos de Vigilancia (Ubicación)")
+        for idx, row in gdf_pvc_filtrado.iterrows():
+            if row.geometry and row.geometry.geom_type == 'Point':
+                coords = [row.geometry.y, row.geometry.x]
+                nombre_puesto = row['NOM_PVC'] if 'NOM_PVC' in row and pd.notna(row['NOM_PVC']) else f"Puesto {idx+1}"
+                
+                folium.Marker(
+                    location=coords,
+                    popup=f"<b>Puesto de Vigilancia y Control:</b><br>{nombre_puesto}",
+                    tooltip=f"🏠 {nombre_puesto}",
+                    icon=folium.Icon(color="darkgreen", icon="shield", prefix="fa")
+                ).add_to(fg_puestos)
+        fg_puestos.add_to(m)
 
     # Ajuste automático del visor (Zoom to Layer)
     m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
