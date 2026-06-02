@@ -39,14 +39,13 @@ st.markdown("""
         margin-bottom: 20px;             
     }
 
-    /* Cajas Contenedoras para los paneles laterales */
-    .side-panel-box {
-        background-color: #f9fbf9;       /* 🎨 PERSONALIZAR: Fondo verde-grisáceo claro */
-        border: 1px dashed #cedfce;      /* 🎨 PERSONALIZAR: Marco punteado */
-        border-radius: 12px;             
-        padding: 20px;                   
-        min-height: 540px;               /* 📐 PERSONALIZAR: Altura para equiparar columnas */
-        margin-bottom: 20px;
+    /* 🚀 CORRECCIÓN CLAVE: Estilo para los contenedores nativos de Streamlit */
+    div[data-testid="stVerticalBlock"] > div:has(div.custom-panel) {
+        background-color: #f9fbf9 !important;
+        border: 1px dashed #cedfce !important;
+        border-radius: 12px !important;
+        padding: 20px !important;
+        min-height: 540px !important;
     }
 
     /* Contenedor del Mapa Central */
@@ -98,32 +97,29 @@ col_left, col_center, col_right = st.columns([1, 2, 1])
 
 # ===== 🟢 COLUMNA IZQUIERDA (25%) - PANEL DE FILTROS NATIVOS =====
 with col_left:
-    # Se abre la estructura decorativa
-    st.markdown('<div class="side-panel-box">', unsafe_allow_html=True)
-    
-    # Encabezado estático del panel
-    st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">🌱 PANEL DE CONTROL</h3>', unsafe_allow_html=True)
-    st.markdown('<hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">', unsafe_allow_html=True)
-    
-    st.markdown('<p style="color: #1e3a1e; font-weight: bold; margin-bottom: 8px; font-size: 0.95rem;">🔍 Filtrar por Puesto de Control (PVC):</p>', unsafe_allow_html=True)
-    
-    # Control interactivo de Streamlit inyectado directamente
-    pvc_seleccionados = st.multiselect(
-        label="Selecciona uno o varios puntos de interés:",
-        options=lista_pvc,
-        default=[],
-        placeholder="Mostrando toda la Reserva...",
-        label_visibility="collapsed"
-    )
-    
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #555; font-size: 0.85rem; font-style: italic; text-align: center;'>Usa el buscador de arriba para aislar las estadísticas de un puesto específico.</p>", unsafe_allow_html=True)
-    
-    # Cierre seguro de la caja
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Usamos un st.container nativo para agrupar todo sin romper la caja gris
+    with st.container():
+        # Esta clase vacía le avisa al CSS que debe estilizar esta caja completa
+        st.markdown('<div class="custom-panel"></div>', unsafe_allow_html=True)
+        
+        # Elementos internos en orden natural de Python
+        st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">🌱 PANEL DE CONTROL</h3>', unsafe_allow_html=True)
+        st.markdown('<hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">', unsafe_allow_html=True)
+        st.markdown('<p style="color: #1e3a1e; font-weight: bold; margin-bottom: 8px; font-size: 0.95rem;">🔍 Filtrar por Puesto de Control (PVC):</p>', unsafe_allow_html=True)
+        
+        pvc_seleccionados = st.multiselect(
+            label="Selecciona uno o varios puntos de interés:",
+            options=lista_pvc,
+            default=[],
+            placeholder="Mostrando toda la Reserva...",
+            label_visibility="collapsed"
+        )
+        
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #555; font-size: 0.85rem; font-style: italic; text-align: center;'>Usa el buscador de arriba para aislar las estadísticas de un puesto específico.</p>", unsafe_allow_html=True)
 
 
-# ===== 🛠️ LÓGICA DE SIMULACIÓN INTERACTIVA (CORREGIDA) =====
+# ===== 🛠️ LÓGICA DE SIMULACIÓN INTERACTIVA =====
 if pvc_seleccionados:
     cant_especies = 1234 // len(lista_pvc) * len(pvc_seleccionados)
     cant_visitantes = 8942 // len(lista_pvc) * len(pvc_seleccionados)
@@ -138,7 +134,6 @@ else:
 
 # ===== 🔵 COLUMNA CENTRAL (50%) - CONTENIDO PRINCIPAL =====
 with col_center:
-    # Sub-sección: Métricas Clave
     st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 0 0 10px 0;">📊 MÉTRICAS CLAVE</h3>', unsafe_allow_html=True)
     
     m1, m2, m3 = st.columns(3)
@@ -151,7 +146,6 @@ with col_center:
         
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Sub-sección: Zonificación y Mapa
     st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 10px 0 0 0;">🗺️ ZONIFICACIÓN Y MONITOREO</h3>', unsafe_allow_html=True)
     
     texto_mapa = f"Enfocando visor en: {', '.join(pvc_seleccionados)}" if pvc_seleccionados else "Vista general de la Reserva Nacional Tambopata"
@@ -167,14 +161,14 @@ with col_center:
 
 # ===== 🟡 COLUMNA DERECHA (25%) - ACTIVIDAD RECIENTE =====
 with col_right:
-    st.markdown('<div class="side-panel-box">', unsafe_allow_html=True)
-    st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">📢 ACTIVIDAD RECIENTE</h3>', unsafe_allow_html=True)
-    st.markdown('<hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">', unsafe_allow_html=True)
-    st.markdown("""
-        <ul style="font-size: 0.9rem; color: #333; padding-left: 20px; line-height: 1.6; margin-top: 15px;">
-            <li>Sincronización con SMART activa de forma correcta.</li>
-            <li>Monitoreo en patrullajes sin alertas rojas hoy.</li>
-            <li>Puestos de vigilancia reportando conformidad.</li>
-        </ul>
-    """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="custom-panel"></div>', unsafe_allow_html=True)
+        st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">📢 ACTIVIDAD RECIENTE</h3>', unsafe_allow_html=True)
+        st.markdown('<hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">', unsafe_allow_html=True)
+        st.markdown("""
+            <ul style="font-size: 0.9rem; color: #333; padding-left: 20px; line-height: 1.6; margin-top: 15px;">
+                <li>Sincronización con SMART activa de forma correcta.</li>
+                <li>Monitoreo en patrullajes sin alertas rojas hoy.</li>
+                <li>Puestos de vigilancia reportando conformidad.</li>
+            </ul>
+        """, unsafe_allow_html=True)
