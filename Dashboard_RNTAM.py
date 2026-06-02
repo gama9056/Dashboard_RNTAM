@@ -3,10 +3,10 @@ import streamlit as st
 # ========== CONFIGURACIÓN DE PÁGINA ==========
 st.set_page_config(page_title="Dashboard RNTambopata", layout="wide", page_icon="🌿")
 
-# ========== DISEÑO DE ESTILOS CSS ==========
+# ========== DISEÑO DE ESTILOS CSS ESTABLES ==========
 st.markdown("""
 <style>
-    /* Ajustes del espacio superior e inferior de la aplicación */
+    /* Ajustes del espacio superior de la aplicación */
     .block-container {
         padding-top: 2rem !important;    
         padding-bottom: 2rem !important; 
@@ -39,13 +39,15 @@ st.markdown("""
         margin-bottom: 20px;             
     }
 
-    /* Estilo para los contenedores nativos laterales (Izquierda y Derecha) */
-    div[data-testid="stVerticalBlock"] > div:has(div.custom-panel) {
+    /* 🚀 NUEVA CAJA CONTENEDORA: Estilo directo inyectado por clase */
+    .panel-lateral-fijo {
         background-color: #f9fbf9 !important;
         border: 1px dashed #cedfce !important;
         border-radius: 12px !important;
         padding: 20px !important;
         min-height: 540px !important;
+        width: 100% !important;
+        display: block !important;
     }
 
     /* Contenedor del Mapa Central */
@@ -97,9 +99,11 @@ col_left, col_center, col_right = st.columns([1, 2, 1])
 
 # ===== 🟢 COLUMNA IZQUIERDA (25%) - PANEL DE FILTROS (ZONA 01, 02, 03, 04) =====
 with col_left:
-    with st.container():
-        # Indicador para que el motor CSS aplique el fondo gris/verde a este bloque completo
-        st.markdown('<div class="custom-panel"></div>', unsafe_allow_html=True)
+    # Creamos un contenedor e inyectamos el HTML nativo con la clase CSS aplicada
+    contenedor_izq = st.container()
+    with contenedor_izq:
+        # Forzamos la apertura de la caja decorativa que envolverá a los widgets
+        st.html('<div class="panel-lateral-fijo">')
         
         # [ZONA SUPERIOR ENCABEZADO]
         st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">🌱 PANEL DE CONTROL</h3>', unsafe_allow_html=True)
@@ -116,9 +120,12 @@ with col_left:
             label_visibility="collapsed"
         )
         
-        # [ZONA INFERIOR SOPORTE: 05 a 16] - Queda libre para el crecimiento modular del panel
+        # [ZONA INFERIOR SOPORTE: 05 a 16]
         st.markdown("<br><br><br><br>", unsafe_allow_html=True)
         st.markdown("<p style='color: #555; font-size: 0.85rem; font-style: italic; text-align: center;'>Usa el buscador de arriba para aislar las estadísticas de un puesto específico.</p>", unsafe_allow_html=True)
+        
+        # Cerramos la caja HTML de forma segura
+        st.html('</div>')
 
 
 # ===== 🛠️ LÓGICA DE SIMULACIÓN INTERACTIVA =====
@@ -136,7 +143,7 @@ else:
 
 # ===== 🔵 COLUMNA CENTRAL (50%) - CONTENIDO PRINCIPAL =====
 with col_center:
-    # [ZONA 17, 18, 19, 20 / 21, 22, 23, 24] - Métricas Clave
+    # [ZONA 17-24] - Métricas Clave
     st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 0 0 10px 0;">📊 MÉTRICAS CLAVE</h3>', unsafe_allow_html=True)
     
     m1, m2, m3 = st.columns(3)
@@ -149,7 +156,7 @@ with col_center:
         
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Zonificación y área destinada para el mapa interactivo geoespacial
+    # Área del mapa interactivo
     st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 10px 0 0 0;">🗺️ ZONIFICACIÓN Y MONITOREO</h3>', unsafe_allow_html=True)
     
     texto_mapa = f"Enfocando visor en: {', '.join(pvc_seleccionados)}" if pvc_seleccionados else "Vista general de la Reserva Nacional Tambopata"
@@ -165,9 +172,11 @@ with col_center:
 
 # ===== 🟡 COLUMNA DERECHA (25%) - ACTIVIDAD RECIENTE =====
 with col_right:
-    # [ZONA 25 a 40] - Historial e información secundaria en tiempo real
-    with st.container():
-        st.markdown('<div class="custom-panel"></div>', unsafe_allow_html=True)
+    contenedor_der = st.container()
+    with contenedor_der:
+        # Abrimos la caja del panel lateral derecho con el nuevo método blindado
+        st.html('<div class="panel-lateral-fijo">')
+        
         st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">📢 ACTIVIDAD RECIENTE</h3>', unsafe_allow_html=True)
         st.markdown('<hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">', unsafe_allow_html=True)
         st.markdown("""
@@ -177,3 +186,6 @@ with col_right:
                 <li>Puestos de vigilancia reportando conformidad.</li>
             </ul>
         """, unsafe_allow_html=True)
+        
+        # Cerramos de forma segura
+        st.html('</div>')
