@@ -8,57 +8,56 @@ st.markdown("""
 <style>
     /* Ajustes del espacio superior de la aplicación */
     .block-container {
-        padding-top: 3rem !important;    /* 📐 PERSONALIZAR: Baja a 1rem o 2rem si quieres el título MÁS PEGADO al borde superior */
-        padding-bottom: 3rem !important; /* 📐 PERSONALIZAR: Espacio muerto al final de la página */
+        padding-top: 2rem !important;    /* 📐 PERSONALIZAR: Espacio pegado al tope superior */
+        padding-bottom: 2rem !important; /* 📐 PERSONALIZAR: Espacio al final de la página */
     }
 
     .stAppViewMain > div {
-        vertical-align: top;             /* Alinea el bloque base al tope de la pantalla */
+        vertical-align: top;             
     }
 
     /* Caja contenedora del Título Principal */
     .title-container {
-        border: 1px solid #2c5f2d;       /* 🎨 PERSONALIZAR: Grosor (1px), estilo (solid) y color del borde (Hexadecimal) */
-        border-radius: 12px;             /* 📐 PERSONALIZAR: Cambia a 0px para esquinas rectas o a 20px para más redondas */
-        margin-bottom: 15px;             /* 📐 PERSONALIZAR: Espacio de separación (aire) entre esta caja y las columnas de abajo */
-        background-color: #fefef7;       /* 🎨 PERSONALIZAR: Color de fondo. Usa #ffffff si prefieres blanco puro */
-        box-shadow: 0 4px 10px rgba(0,0,0,0.03); /* 🎨 PERSONALIZAR: Sombra sutil. Sube 0.03 a 0.10 si quieres una sombra más marcada */
+        border: 1px solid #2c5f2d;       /* 🎨 PERSONALIZAR: Grosor y color verde del borde */
+        border-radius: 12px;             /* 📐 PERSONALIZAR: Redondeo de esquinas */
+        margin-bottom: 10px;             /* Separación con la línea divisoria */
+        background-color: #fefef7;       /* 🎨 PERSONALIZAR: Color de fondo hueso suave */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
         
-        /* Sistema Flexbox para centrado automático */
         display: flex;
-        align-items: center;             /* Mantiene el texto centrado verticalmente sin importar la altura de la caja */
-        justify-content: center;         /* Mantiene el texto centrado horizontalmente */
-        height: 60px;                    /* 📐 PERSONALIZAR: Altura de la caja. Sube a 70px u 80px si notas el texto muy ajustado */
+        align-items: center;             
+        justify-content: center;         
+        height: 60px;                    
     }
 
-    /* 🚀 NUEVO: Estilo personalizado para la línea divisoria */
+    /* Estilo para la línea divisoria sutil */
     .custom-hr {
         border: 0;
-        height: 1px;                     /* 📐 PERSONALIZAR: Grosor de la línea (ej. 2px si la quieres más marcada) */
-        background-color: #d4e6d4;       /* 🎨 PERSONALIZAR: Color de la línea (un verde grisáceo muy sutil) */
-        margin-top: 10px;                /* Separación con la caja del título */
-        margin-bottom: 25px;             /* Separación con el contenido de abajo */
+        height: 1px;                     
+        background-color: #e0e0e0;       /* 🎨 PERSONALIZAR: Color gris muy claro para no saturar */
+        margin-top: 5px;                 
+        margin-bottom: 20px;             /* Separación directa con los bloques de abajo */
     }
 
     /* Columnas laterales decorativas (Paneles Izquierdo y Derecho) */
     .side-decor {
-        background-color: #eaf7ea;       /* 🎨 PERSONALIZAR: Color de fondo verde claro natural */
-        min-height: 500px;               /* 📐 PERSONALIZAR: Altura mínima de las cajas laterales para estirarlas hacia abajo */
-        border-radius: 12px;             /* 📐 PERSONALIZAR: Redondeo de esquinas de las cajas laterales */
-        padding: 20px;                   /* 📐 PERSONALIZAR: Espacio interno para que el texto no toque los bordes */
-        color: #2c5f2d;                  /* 🎨 PERSONALIZAR: Color de las letras y títulos dentro de estos paneles */
-        border: 1px dashed #97bc62;      /* 🎨 PERSONALIZAR: Estilo del borde: grosor (1px), estilo (dashed = punteado) y color */
-        text-align: center;              /* Centra todo el contenido horizontalmente */
+        background-color: #f9fbf9;       /* 🎨 PERSONALIZAR: Fondo verde-grisáceo ultraclaro */
+        min-height: 520px;               /* 📐 PERSONALIZAR: Altura para emparejar con el centro */
+        border-radius: 12px;             
+        padding: 20px;                   
+        color: #2c5f2d;                  
+        border: 1px dashed #cedfce;      /* 🎨 PERSONALIZAR: Borde punteado suave */
     }
 
-    /* Contenedor temporal para el área del Mapa Central */
+    /* Contenedor del Mapa Central */
     .map-container {
-        background-color: #e2f0e2;       /* 🎨 PERSONALIZAR: Fondo verde sutil para identificar el espacio del mapa */
-        border-radius: 12px;             /* 📐 PERSONALIZAR: Redondeo de las esquinas del cuadro del mapa */
-        padding: 60px 20px;              /* 📐 PERSONALIZAR: Espacio vertical (60px) para darle grosor/altura inicial a la caja */
-        text-align: center;              /* Centra horizontalmente los textos y emojis del mapa */
-        color: #2c5f2d;                  /* 🎨 PERSONALIZAR: Color de las letras temporales del mapa */
-        margin-top: 10px;                /* Separación externa con el título superior de la sección */
+        background-color: #eef5ee;       /* 🎨 PERSONALIZAR: Fondo sutil para el área del mapa */
+        border-radius: 12px;             
+        padding: 50px 20px;              /* Grosor interno vertical */
+        text-align: center;              
+        color: #2c5f2d;                  
+        margin-top: 10px;                
+        border: 1px solid #e0eee0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -74,9 +73,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ===========================================================================
-# 🚀 NUEVO: LÍNEA DIVISORIA ENTRE EL TÍTULO Y LOS CUADROS
-# ===========================================================================
+# LÍNEA DIVISORIA SUTIL
 st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 
 # ===========================================================================
@@ -84,32 +81,51 @@ st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 # ===========================================================================
 col_left, col_center, col_right = st.columns([1, 2, 1])
 
-# ===== 🟢 COLUMNA IZQUIERDA (25%) - PANEL DE FILTROS / INFO =====
+# ===== 🟢 COLUMNA IZQUIERDA (25%) - PANEL DE FILTROS =====
 with col_left:
-    st.markdown('<div class="side-decor">', unsafe_allow_html=True)
-    st.markdown("🌱 **PANEL DE CONTROL**")
-    st.markdown("---")
-    st.markdown("🔍 **Filtros rápidos**")
-    st.markdown("*(Espacio interactivo para filtros futuros)*")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ===== 🔵 COLUMNA CENTRAL (50%) - CONTENIDO PRINCIPAL Y MAPA =====
-with col_center:
-    # Título de sección usando HTML limpio para conservar el estilo natural
-    st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: 600; margin: 0;">🗺️ ZONIFICACIÓN Y MONITOREO</h3>', unsafe_allow_html=True)
-    
-    # Caja contenedora del Mapa
     st.markdown("""
-    <div class="map-container">
-        🗺️ <strong>MAPA INTERACTIVO DE LA RESERVA</strong><br>
-        (Aquí se integrará el visor de mapas con las capas geoespaciales correspondientes)
+    <div class="side-decor">
+        <h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">🌱 PANEL DE CONTROL</h3>
+        <hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">
+        <p style="font-size: 0.95rem; text-align: center; color: #555;">🔍 <strong>Filtros rápidos</strong></p>
+        <p style="font-size: 0.85rem; text-align: center; color: #777; font-style: italic;">(Espacio interactivo para los selectores de datos futuros)</p>
     </div>
     """, unsafe_allow_html=True)
 
-# ===== 🟡 COLUMNA DERECHA (25%) - ALERTAS / ACTIVIDAD =====
+# ===== 🔵 COLUMNA CENTRAL (50%) - CONTENIDO PRINCIPAL (MÉTRICAS Y MAPA) =====
+with col_center:
+    # Sub-sección: Métricas Clave
+    st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 0 0 10px 0;">📊 MÉTRICAS CLAVE</h3>', unsafe_allow_html=True)
+    
+    # Grid de 3 columnas nativas de Streamlit para albergar tus tarjetas internas
+    m1, m2, m3 = st.columns(3)
+    with m1:
+        st.metric(label="🦋 Especies registradas", value="1,234", delta="+12 este año")
+    with m2:
+        st.metric(label="👥 Visitantes 2025", value="8,942", delta="↑ 15% vs 2024")
+    with m3:
+        st.metric(label="🔥 Alertas", value="3", delta="Activas (2 incendios, 1 aviso)", delta_color="inverse")
+        
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Sub-sección: Zonificación y Mapa
+    st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 10px 0 0 0;">🗺️ ZONIFICACIÓN Y MONITOREO</h3>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="map-container">
+        🗺️ <strong>MAPA INTERACTIVO DE LA RESERVA</strong><br>
+        <span style="font-size: 0.85rem; color: #555;">(Aquí se integrará el visor de mapas con las capas geoespaciales correspondientes)</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ===== 🟡 COLUMNA DERECHA (25%) - ACTIVIDAD RECIENTE =====
 with col_right:
-    st.markdown('<div class="side-decor">', unsafe_allow_html=True)
-    st.markdown("📢 **ACTIVIDAD RECIENTE**")
-    st.markdown("---")
-    st.markdown("• Monitoreo activo en la reserva sin novedades.")
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class="side-decor">
+        <h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">📢 ACTIVIDAD RECIENTE</h3>
+        <hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">
+        <ul style="font-size: 0.9rem; color: #333; padding-left: 20px; line-height: 1.6;">
+            <li>Monitoreo activo en la reserva sin novedades críticas.</li>
+            <li>Puestos de vigilancia reportando conformidad en tiempo real.</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
