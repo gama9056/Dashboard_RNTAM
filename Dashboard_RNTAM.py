@@ -1,7 +1,7 @@
 import streamlit as st
 
 # ==========================================================
-# CONFIGURACIÓN DE PÁGINA
+# CONFIGURACIÓN GENERAL
 # ==========================================================
 st.set_page_config(
     page_title="Dashboard RNTambopata",
@@ -10,14 +10,14 @@ st.set_page_config(
 )
 
 # ==========================================================
-# CSS
+# ESTILOS CSS
 # ==========================================================
 st.markdown("""
 <style>
 
 .block-container{
-    padding-top:2rem;
-    padding-bottom:2rem;
+    padding-top:1.5rem;
+    padding-bottom:1rem;
 }
 
 .title-container{
@@ -34,37 +34,37 @@ st.markdown("""
 .custom-hr{
     border:0;
     height:1px;
-    background:#dddddd;
-    margin-top:10px;
+    background:#d9d9d9;
+    margin-top:5px;
     margin-bottom:20px;
 }
 
-.panel-box{
-    border:1px solid #cedfce;
-    border-radius:18px;
-    background:#f8fbf8;
-    padding:20px;
-    min-height:540px;
-}
-
-.map-box{
-    border:1px solid #dce8dc;
-    border-radius:18px;
+.map-container{
     background:#eef5ee;
-    padding:50px;
+    border:1px solid #d9e7d9;
+    border-radius:15px;
+    padding:40px;
     text-align:center;
     min-height:320px;
+}
+
+.stMetric{
+    border-radius:10px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================================
-# TÍTULO
+# CABECERA
 # ==========================================================
 st.markdown("""
 <div class="title-container">
-<h2 style="margin:0;color:#1e3a1e;">
+<h2 style="
+margin:0;
+font-weight:bold;
+color:#163b16;
+">
 🌿 DASHBOARD - RESERVA NACIONAL TAMBOPATA 🌿
 </h2>
 </div>
@@ -100,47 +100,42 @@ col_left, col_center, col_right = st.columns(
 # ==========================================================
 with col_left:
 
-    st.markdown("""
-    <div class="panel-box">
-    <h3 style="text-align:center;color:#1e3a1e;">
-    🌱 PANEL DE CONTROL
-    </h3>
-    </div>
-    """, unsafe_allow_html=True)
+    with st.container(height=540, border=True):
 
-    pvc_seleccionados = st.multiselect(
-        "🔍 Filtrar por Puesto de Control",
-        options=lista_pvc,
-        placeholder="Mostrando toda la Reserva..."
-    )
+        st.markdown("""
+        <h2 style='
+        text-align:center;
+        color:#163b16;
+        margin-bottom:25px;
+        '>
+        🌱 PANEL DE CONTROL
+        </h2>
+        """, unsafe_allow_html=True)
 
-    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+        pvc_seleccionados = st.multiselect(
+            "🔍 Filtrar por Puesto de Control",
+            options=lista_pvc,
+            placeholder="Mostrando toda la Reserva..."
+        )
 
-    st.info(
-        "Usa el filtro para aislar estadísticas de uno o varios PVC."
-    )
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.info(
+            "Seleccione uno o varios Puestos de Vigilancia y Control para actualizar automáticamente los indicadores."
+        )
 
 # ==========================================================
-# MÉTRICAS SIMULADAS
+# LÓGICA DE FILTRO
 # ==========================================================
 if pvc_seleccionados:
 
-    cant_especies = (
-        1234 // len(lista_pvc)
-    ) * len(pvc_seleccionados)
+    factor = len(pvc_seleccionados)
 
-    cant_visitantes = (
-        8942 // len(lista_pvc)
-    ) * len(pvc_seleccionados)
+    cant_especies = (1234 // 9) * factor
+    cant_visitantes = (8942 // 9) * factor
+    cant_alertas = max(1, factor - 6)
 
-    cant_alertas = max(
-        1,
-        len(pvc_seleccionados) - 6
-    )
-
-    texto_delta = (
-        f"{len(pvc_seleccionados)} PVC seleccionados"
-    )
+    texto_delta = f"{factor} PVC seleccionados"
 
 else:
 
@@ -148,60 +143,83 @@ else:
     cant_visitantes = 8942
     cant_alertas = 3
 
-    texto_delta = "Total general RNTAM"
+    texto_delta = "Total general de la RNTAM"
 
 # ==========================================================
-# COLUMNA CENTRAL
+# PANEL CENTRAL
 # ==========================================================
 with col_center:
 
-    st.subheader("📊 MÉTRICAS CLAVE")
+    st.markdown("""
+    <h2 style='color:#163b16;'>
+    📊 MÉTRICAS CLAVE
+    </h2>
+    """, unsafe_allow_html=True)
 
     m1, m2, m3 = st.columns(3)
 
     with m1:
         st.metric(
-            "🦋 Especies registradas",
-            f"{cant_especies:,}",
-            texto_delta
+            label="🦋 Especies registradas",
+            value=f"{cant_especies:,}",
+            delta=texto_delta
         )
 
     with m2:
         st.metric(
-            "👥 Visitantes 2025",
-            f"{cant_visitantes:,}",
-            texto_delta
+            label="👥 Visitantes 2025",
+            value=f"{cant_visitantes:,}",
+            delta=texto_delta
         )
 
     with m3:
         st.metric(
-            "🔥 Alertas SMART",
-            cant_alertas,
-            "Riesgo de presiones",
+            label="🔥 Alertas SMART",
+            value=str(cant_alertas),
+            delta="Riesgo de presiones",
             delta_color="inverse"
         )
 
-    st.markdown("")
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    st.subheader("🗺️ ZONIFICACIÓN Y MONITOREO")
+    st.markdown("""
+    <h2 style='color:#163b16;'>
+    🗺️ ZONIFICACIÓN Y MONITOREO
+    </h2>
+    """, unsafe_allow_html=True)
 
-    texto_mapa = (
-        "Vista general de la Reserva Nacional Tambopata"
-        if not pvc_seleccionados
-        else "Enfocando: " + ", ".join(pvc_seleccionados)
-    )
+    if pvc_seleccionados:
+        texto_mapa = "📍 " + ", ".join(pvc_seleccionados)
+    else:
+        texto_mapa = "📍 Vista general de la Reserva Nacional Tambopata"
 
     st.markdown(f"""
-    <div class="map-box">
-        <h4>🗺️ MAPA INTERACTIVO DE LA RESERVA</h4>
+    <div class="map-container">
 
-        <b>{texto_mapa}</b>
+        <h3 style="
+        color:#163b16;
+        margin-bottom:25px;
+        ">
+        🗺️ MAPA INTERACTIVO DE LA RESERVA
+        </h3>
 
-        <br><br>
+        <p style="
+        font-size:18px;
+        font-weight:bold;
+        color:#163b16;
+        ">
+        {texto_mapa}
+        </p>
 
-        <span style="color:#666;">
-        Aquí irá el mapa Folium con zoom automático.
-        </span>
+        <br>
+
+        <p style="
+        color:#666;
+        ">
+        Aquí se integrará el mapa Folium con zoom automático,
+        filtros espaciales y monitoreo en tiempo real.
+        </p>
+
     </div>
     """, unsafe_allow_html=True)
 
@@ -210,22 +228,31 @@ with col_center:
 # ==========================================================
 with col_right:
 
-    st.markdown("""
-    <div class="panel-box">
-    <h3 style="text-align:center;color:#1e3a1e;">
-    📢 ACTIVIDAD RECIENTE
-    </h3>
-    </div>
-    """, unsafe_allow_html=True)
+    with st.container(height=540, border=True):
 
-    st.markdown("""
-    • Sincronización con SMART activa correctamente.
+        st.markdown("""
+        <h2 style='
+        text-align:center;
+        color:#163b16;
+        margin-bottom:25px;
+        '>
+        📢 ACTIVIDAD RECIENTE
+        </h2>
+        """, unsafe_allow_html=True)
 
-    • Patrullajes sin alertas rojas.
+        st.markdown("""
+        • Sincronización con SMART activa correctamente.
 
-    • Puestos de vigilancia reportando conformidad.
+        • Monitoreo de patrullajes sin alertas rojas.
 
-    • Monitoreo actualizado.
+        • Puestos de vigilancia reportando conformidad.
 
-    • Datos sincronizados con éxito.
-    """)
+        • Actualización de registros completada.
+
+        • Datos sincronizados exitosamente.
+        """)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.success("Sistema operativo y actualizado.")
+        
