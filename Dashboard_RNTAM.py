@@ -8,8 +8,8 @@ st.markdown("""
 <style>
     /* Ajustes del espacio superior de la aplicación */
     .block-container {
-        padding-top: 2rem !important;    /* 📐 PERSONALIZAR: Espacio pegado al tope superior */
-        padding-bottom: 2rem !important; /* 📐 PERSONALIZAR: Espacio al final de la página */
+        padding-top: 2rem !important;    
+        padding-bottom: 2rem !important; 
     }
 
     .stAppViewMain > div {
@@ -18,10 +18,10 @@ st.markdown("""
 
     /* Caja contenedora del Título Principal */
     .title-container {
-        border: 1px solid #2c5f2d;       /* 🎨 PERSONALIZAR: Grosor y color verde del borde */
-        border-radius: 12px;             /* 📐 PERSONALIZAR: Redondeo de esquinas */
-        margin-bottom: 10px;             /* Separación con la línea divisoria */
-        background-color: #fefef7;       /* 🎨 PERSONALIZAR: Color de fondo hueso suave */
+        border: 1px solid #2c5f2d;       
+        border-radius: 12px;             
+        margin-bottom: 10px;             
+        background-color: #fefef7;       
         box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
         
         display: flex;
@@ -34,26 +34,26 @@ st.markdown("""
     .custom-hr {
         border: 0;
         height: 1px;                     
-        background-color: #e0e0e0;       /* 🎨 PERSONALIZAR: Color gris muy claro para no saturar */
+        background-color: #e0e0e0;       
         margin-top: 5px;                 
-        margin-bottom: 20px;             /* Separación directa con los bloques de abajo */
+        margin-bottom: 20px;             
     }
 
     /* Columnas laterales decorativas (Paneles Izquierdo y Derecho) */
     .side-decor {
-        background-color: #f9fbf9;       /* 🎨 PERSONALIZAR: Fondo verde-grisáceo ultraclaro */
-        min-height: 520px;               /* 📐 PERSONALIZAR: Altura para emparejar con el centro */
+        background-color: #f9fbf9;       
+        min-height: 540px;               /* 📐 PERSONALIZAR: Se subió a 540px para dar aire a los nuevos selectores */
         border-radius: 12px;             
         padding: 20px;                   
         color: #2c5f2d;                  
-        border: 1px dashed #cedfce;      /* 🎨 PERSONALIZAR: Borde punteado suave */
+        border: 1px dashed #cedfce;      
     }
 
     /* Contenedor del Mapa Central */
     .map-container {
-        background-color: #eef5ee;       /* 🎨 PERSONALIZAR: Fondo sutil para el área del mapa */
+        background-color: #eef5ee;       
         border-radius: 12px;             
-        padding: 50px 20px;              /* Grosor interno vertical */
+        padding: 50px 20px;              
         text-align: center;              
         color: #2c5f2d;                  
         margin-top: 10px;                
@@ -81,39 +81,74 @@ st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 # ===========================================================================
 col_left, col_center, col_right = st.columns([1, 2, 1])
 
-# ===== 🟢 COLUMNA IZQUIERDA (25%) - PANEL DE FILTROS =====
+# ===== 🟢 COLUMNA IZQUIERDA (25%) - PANEL DE FILTROS INTERACTIVOS =====
 with col_left:
     st.markdown("""
     <div class="side-decor">
         <h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">🌱 PANEL DE CONTROL</h3>
         <hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">
-        <p style="font-size: 0.95rem; text-align: center; color: #555;">🔍 <strong>Filtros rápidos</strong></p>
-        <p style="font-size: 0.85rem; text-align: center; color: #777; font-style: italic;">(Espacio interactivo para los selectores de datos futuros)</p>
-    </div>
     """, unsafe_allow_html=True)
+    
+    # 🚀 NUEVO: Selectores nativos de Streamlit inyectados limpiamente dentro del cuadro decorativo
+    st.markdown("<p style='color: #1e3a1e; font-weight: bold; margin-bottom: 5px;'>🔍 Filtrar por Puesto de Control (PVC):</p>", unsafe_allow_html=True)
+    
+    # Lista de los Puestos de Vigilancia clave de la RNTAM
+    lista_pvc = ["PVC Azul", "PVC Malinowski", "PVC Otorongo", "PVC Yarinal", "PVC Baltimore", "PVC El Gato", "PVC Sandoval"]
+    
+    # Selector múltiple interactivo
+    pvc_seleccionados = st.multiselect(
+        label="Selecciona uno o varios puntos de interés:",
+        options=lista_pvc,
+        default=[],
+        placeholder="Mostrando toda la Reserva..."
+    )
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #555; font-size: 0.85rem; font-style: italic; text-align: center;'>Usa el buscador de arriba para aislar las estadísticas de un puesto específico.</p>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# ===== 🔵 COLUMNA CENTRAL (50%) - CONTENIDO PRINCIPAL (MÉTRICAS Y MAPA) =====
+# ===== 🛠️ LÓGICA DE SIMULACIÓN INTERACTIVA =====
+# Esto calcula valores dinámicos para las métricas dependiendo de lo que elija el usuario
+if pvc_seleccionados:
+    # Si selecciona puestos específicos, muestra datos proporcionales reducidos
+    cant_especies = 1234 // len(lista_pvc) * len(pvc_seleccionados)
+    cant_visitantes = 8942 // len(lista_pvc) * len(pvc_seleccionados)
+    cant_alertas = max(1, len(pvc_seleccionados) - 4)
+    texto_delta = f"Filtrado para {len(pvc_seleccionados)} PVC"
+else:
+    # Si no selecciona ninguno, muestra el total general de la Reserva
+    cant_especies = 1234
+    cant_visitantes = 8942
+    cant_alertas = 3
+    texto_delta = "Total general de la RNTAM"
+
+# ===== 🔵 COLUMNA CENTRAL (50%) - CONTENIDO PRINCIPAL (MÉTRICAS DINÁMICAS Y MAPA) =====
 with col_center:
     # Sub-sección: Métricas Clave
     st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 0 0 10px 0;">📊 MÉTRICAS CLAVE</h3>', unsafe_allow_html=True)
     
-    # Grid de 3 columnas nativas de Streamlit para albergar tus tarjetas internas
+    # Grid de 3 columnas de Streamlit mostrando las variables dinámicas calculadas arriba
     m1, m2, m3 = st.columns(3)
     with m1:
-        st.metric(label="🦋 Especies registradas", value="1,234", delta="+12 este año")
+        st.metric(label="🦋 Especies registradas", value=f"{cant_especies:,}", delta=texto_delta)
     with m2:
-        st.metric(label="👥 Visitantes 2025", value="8,942", delta="↑ 15% vs 2024")
+        st.metric(label="👥 Visitantes 2025", value=f"{cant_visitantes:,}", delta=texto_delta)
     with m3:
-        st.metric(label="🔥 Alertas", value="3", delta="Activas (2 incendios, 1 aviso)", delta_color="inverse")
+        st.metric(label="🔥 Alertas SMART", value=str(cant_alertas), delta="Estado de riesgo", delta_color="inverse")
         
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Sub-sección: Zonificación y Mapa
     st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 10px 0 0 0;">🗺️ ZONIFICACIÓN Y MONITOREO</h3>', unsafe_allow_html=True)
-    st.markdown("""
+    
+    # Mensaje adaptativo dentro de la caja del mapa para ver el cambio de estado
+    texto_mapa = f"Enfocando visor en: {', '.join(pvc_seleccionados)}" if pvc_seleccionados else "Vista general de la Reserva Nacional Tambopata"
+    
+    st.markdown(f"""
     <div class="map-container">
         🗺️ <strong>MAPA INTERACTIVO DE LA RESERVA</strong><br>
-        <span style="font-size: 0.85rem; color: #555;">(Aquí se integrará el visor de mapas con las capas geoespaciales correspondientes)</span>
+        <span style="font-size: 0.95rem; color: #1e3a1e; font-weight: bold;">📍 {texto_mapa}</span><br>
+        <span style="font-size: 0.85rem; color: #555;">(Pronto reemplazaremos esta caja por el mapa real de Folium con zoom automático)</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -124,8 +159,9 @@ with col_right:
         <h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">📢 ACTIVIDAD RECIENTE</h3>
         <hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">
         <ul style="font-size: 0.9rem; color: #333; padding-left: 20px; line-height: 1.6;">
-            <li>Monitoreo activo en la reserva sin novedades críticas.</li>
-            <li>Puestos de vigilancia reportando conformidad en tiempo real.</li>
+            <li>Sincronización con SMART activa de forma correcta.</li>
+            <li>Monitoreo en patrullajes sin alertas rojas hoy.</li>
+            <li>Puestos de vigilancia reportando conformidad.</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
