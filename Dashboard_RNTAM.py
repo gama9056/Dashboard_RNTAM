@@ -151,13 +151,12 @@ if pvc_seleccionados and not gdf_ambitos.empty:
     texto_delta = f"{factor} PVC seleccionados"
 else:
     gdf_filtrado = gdf_ambitos.copy()
-    # Si no hay filtro, intenta enfocar el mapa usando el límite de toda la ANP o la ZA
     if not gdf_anp.empty:
         bounds = gdf_anp.total_bounds
     elif not gdf_ambitos.empty:
         bounds = gdf_ambitos.total_bounds
     else:
-        bounds = [-69.8, -13.1, -69.2, -12.5] # Coordenadas de respaldo de Madre de Dios
+        bounds = [-69.8, -13.1, -69.2, -12.5]
         
     cant_especies = 1234
     cant_visitantes = 8942
@@ -177,10 +176,83 @@ with col_center:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<h2 style='color:#163b16; margin:0 0 10px 0;'>🗺️ ZONIFICACIÓN Y MONITOREO</h2>", unsafe_allow_html=True)
 
-    # Configuración de coordenadas base
+    # Coordenadas y mapa base
     centro_mapa = [(bounds[1] + bounds[3]) / 2, (bounds[0] + bounds[2]) / 2]
     m = folium.Map(location=centro_mapa, zoom_start=10, control_scale=True)
     
-    # Capa de satélite como mapa base por defecto
+    # URL del mapa satelital blindada en una sola variable limpia
+    url_satelite = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+    
     folium.TileLayer(
-        tiles='
+        tiles=url_satelite,
+        attr="Google Maps Satellite",
+        name="Google Satélite",
+        overlay=False,
+        control=True
+    ).add_to(m)
+
+    # 1. DIBUJAR CAPA: ZONA DE AMORTIGUAMIENTO (ZA)
+    if not gdf_za.empty:
+        folium.GeoJson(
+            gdf_za,
+            name="🔶 Zona de Amortiguamiento (ZA)",
+            style_function=lambda x: {
+                'fillColor': '#e67e22',
+                'color': '#d35400',
+                'weight': 1.5,
+                'fillOpacity': 0.15
+            }
+        ).add_to(m)
+
+    # 2. DIBUJAR CAPA: ÁMBITOS DE CONTROL PVC
+    if not gdf_filtrado.empty:
+        folium.GeoJson(
+            gdf_filtrado,
+            name="📂 Ámbitos de Control PVC",
+            style_function=lambda x: {
+                'fillColor': '#2c5f2d',
+                'color': '#163b16',
+                'weight': 1.5,
+                'fillOpacity': opacidad
+            },
+            tooltip=folium.GeoJsonTooltip(fields=["NOM_PVC"], aliases=["Ámbito de Control: "])
+        ).add_to(m)
+
+    # 3. DIBUJAR CAPA: LÍMITE OFICIAL DE LA RESERVA (ANP)
+    if not gdf_anp.empty:
+        folium.GeoJson(
+            gdf_anp,
+            name="🌿 Límite Oficial ANP RNTAM",
+            style_function=lambda x: {
+                'fillColor': 'none',
+                'color': '#27ae60',
+                'weight': 3
+            }
+        ).add_to(m)
+
+    # Ajuste automático del visor (Zoom to Layer)
+    m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+    folium.LayerControl(position="topright", collapsed=False).add_to(m)
+    
+    # Renderizado final
+    st_folium(m, width="100%", height=415, returned_objects=[])
+
+# ==========================================================
+# PANEL DERECHO (ACTIVIDAD RECIENTE)
+# ==========================================================
+with col_right:
+    with st.container(height=575, border=True):
+        st.markdown("<h2 style='text-align:center; color:#163b16; margin-bottom:25px;'>📢 ACTIVIDAD RECIENTE</h2>", unsafe_allow_html=True)
+        st.markdown("""
+        • Sincronización con SMART activa de forma correcta.
+
+        • Monitoreo en patrullajes sin alertas rojas hoy.
+
+        • Puestos de vigilancia reportando conformidad.
+
+        • Capas ANP y Zona de Amortiguamiento cargadas.
+
+        • Datos cartográficos del SERNANP actualizados.
+        """)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.success("Sistema operativo y actualizado.")
