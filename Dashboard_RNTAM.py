@@ -149,4 +149,32 @@ with col_center:
     with m3:
         st.metric(label="🔥 Alertas SMART", value=str(cant_alertas), delta="Riesgo de presiones", delta_color="inverse")
         
-    st.markdown("<br>",
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Sub-sección: Zonificación y Mapa
+    st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 10px 0 0 0;">🗺️ ZONIFICACIÓN Y MONITOREO</h3>', unsafe_allow_html=True)
+    
+    texto_mapa = f"Enfocando visor en: {', '.join(pvc_seleccionados)}" if pvc_seleccionados else "Vista general de la Reserva Nacional Tambopata"
+    
+    st.markdown(f"""
+    <div class="map-container">
+        🗺️ <strong>MAPA INTERACTIVO DE LA RESERVA</strong><br>
+        <span style="font-size: 0.95rem; color: #1e3a1e; font-weight: bold;">📍 {texto_mapa}</span><br>
+        <span style="font-size: 0.85rem; color: #555;">(Pronto reemplazaremos esta caja por el mapa real de Folium con zoom automático)</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ===== 🟡 COLUMNA DERECHA (25%) - ACTIVIDAD RECIENTE =====
+with col_right:
+    st.markdown('<div class="side-panel-box">', unsafe_allow_html=True)
+    st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">📢 ACTIVIDAD RECIENTE</h3>', unsafe_allow_html=True)
+    st.markdown('<hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">', unsafe_allow_html=True)
+    st.markdown("""
+        <ul style="font-size: 0.9rem; color: #333; padding-left: 20px; line-height: 1.6; margin-top: 15px;">
+            <li>Sincronización con SMART activa de forma correcta.</li>
+            <li>Monitoreo en patrullajes sin alertas rojas hoy.</li>
+            <li>Puestos de vigilancia reportando conformidad.</li>
+        </ul>
+    """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
