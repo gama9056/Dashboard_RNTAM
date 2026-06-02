@@ -1,85 +1,80 @@
 import streamlit as st
 
-# ========== CONFIGURACIÓN DE PÁGINA ==========
-st.set_page_config(page_title="Dashboard RNTambopata", layout="wide", page_icon="🌿")
+# ==========================================================
+# CONFIGURACIÓN DE PÁGINA
+# ==========================================================
+st.set_page_config(
+    page_title="Dashboard RNTambopata",
+    page_icon="🌿",
+    layout="wide"
+)
 
-# ========== DISEÑO DE ESTILOS CSS ESTABLES ==========
+# ==========================================================
+# CSS
+# ==========================================================
 st.markdown("""
 <style>
-    /* Ajustes del espacio superior de la aplicación */
-    .block-container {
-        padding-top: 2rem !important;    
-        padding-bottom: 2rem !important; 
-    }
 
-    .stAppViewMain > div {
-        vertical-align: top;             
-    }
+.block-container{
+    padding-top:2rem;
+    padding-bottom:2rem;
+}
 
-    /* Caja contenedora del Título Principal */
-    .title-container {
-        border: 1px solid #2c5f2d;       
-        border-radius: 12px;             
-        margin-bottom: 10px;             
-        background-color: #fefef7;       
-        box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
-        
-        display: flex;
-        align-items: center;             
-        justify-content: center;         
-        height: 60px;                    
-    }
+.title-container{
+    border:1px solid #2c5f2d;
+    border-radius:12px;
+    background:#fefef7;
+    height:60px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:10px;
+}
 
-    /* Estilo para la línea divisoria sutil */
-    .custom-hr {
-        border: 0;
-        height: 1px;                     
-        background-color: #e0e0e0;       
-        margin-top: 5px;                 
-        margin-bottom: 20px;             
-    }
+.custom-hr{
+    border:0;
+    height:1px;
+    background:#dddddd;
+    margin-top:10px;
+    margin-bottom:20px;
+}
 
-    /* 🚀 NUEVA CAJA CONTENEDORA: Estilo directo inyectado por clase */
-    .panel-lateral-fijo {
-        background-color: #f9fbf9 !important;
-        border: 1px dashed #cedfce !important;
-        border-radius: 12px !important;
-        padding: 20px !important;
-        min-height: 540px !important;
-        width: 100% !important;
-        display: block !important;
-    }
+.panel-box{
+    border:1px solid #cedfce;
+    border-radius:18px;
+    background:#f8fbf8;
+    padding:20px;
+    min-height:540px;
+}
 
-    /* Contenedor del Mapa Central */
-    .map-container {
-        background-color: #eef5ee;       
-        border-radius: 12px;             
-        padding: 50px 20px;              
-        text-align: center;              
-        color: #2c5f2d;                  
-        margin-top: 10px;                
-        border: 1px solid #e0eee0;
-    }
+.map-box{
+    border:1px solid #dce8dc;
+    border-radius:18px;
+    background:#eef5ee;
+    padding:50px;
+    text-align:center;
+    min-height:320px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# ===========================================================================
-# 1. 📦 CAJA DEL TÍTULO PRINCIPAL
-# ===========================================================================
+# ==========================================================
+# TÍTULO
+# ==========================================================
 st.markdown("""
 <div class="title-container">
-    <h2 style="color: #1e3a1e; margin: 0; font-size: 1.8rem; font-weight: bold; line-height: 1;">
-        🌿 DASHBOARD - RESERVA NACIONAL TAMBOPATA 🌿
-    </h2>
+<h2 style="margin:0;color:#1e3a1e;">
+🌿 DASHBOARD - RESERVA NACIONAL TAMBOPATA 🌿
+</h2>
 </div>
 """, unsafe_allow_html=True)
 
-# LÍNEA DIVISORIA SUTIL
 st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 
-# ===========================================================================
-# 📋 LISTA OFICIAL DE LOS 9 PVC DE LA RNTAM
-# ===========================================================================
+# ==========================================================
+# LISTA PVC
+# ==========================================================
 lista_pvc = [
     "PVC Otorongo",
     "PVC Azul",
@@ -92,100 +87,145 @@ lista_pvc = [
     "PVC Huisene"
 ]
 
-# ===========================================================================
-# 2. 🏢 ESTRUCTURA DE COLUMNAS PRINCIPALES (FILA 1: 25% - 50% - 25%)
-# ===========================================================================
-col_left, col_center, col_right = st.columns([1, 2, 1])
+# ==========================================================
+# COLUMNAS PRINCIPALES
+# ==========================================================
+col_left, col_center, col_right = st.columns(
+    [1, 2, 1],
+    gap="large"
+)
 
-# ===== 🟢 COLUMNA IZQUIERDA (25%) - PANEL DE FILTROS (ZONA 01, 02, 03, 04) =====
+# ==========================================================
+# PANEL IZQUIERDO
+# ==========================================================
 with col_left:
-    # Creamos un contenedor e inyectamos el HTML nativo con la clase CSS aplicada
-    contenedor_izq = st.container()
-    with contenedor_izq:
-        # Forzamos la apertura de la caja decorativa que envolverá a los widgets
-        st.html('<div class="panel-lateral-fijo">')
-        
-        # [ZONA SUPERIOR ENCABEZADO]
-        st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">🌱 PANEL DE CONTROL</h3>', unsafe_allow_html=True)
-        st.markdown('<hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">', unsafe_allow_html=True)
-        
-        # [🎯 ASIGNADO EN COORDENADAS: 01, 02, 03, 04]
-        st.markdown('<p style="color: #1e3a1e; font-weight: bold; margin-bottom: 8px; font-size: 0.95rem;">🔍 Filtrar por Puesto de Control (PVC):</p>', unsafe_allow_html=True)
-        
-        pvc_seleccionados = st.multiselect(
-            label="Selecciona uno o varios puntos de interés:",
-            options=lista_pvc,
-            default=[],
-            placeholder="Mostrando toda la Reserva...",
-            label_visibility="collapsed"
-        )
-        
-        # [ZONA INFERIOR SOPORTE: 05 a 16]
-        st.markdown("<br><br><br><br>", unsafe_allow_html=True)
-        st.markdown("<p style='color: #555; font-size: 0.85rem; font-style: italic; text-align: center;'>Usa el buscador de arriba para aislar las estadísticas de un puesto específico.</p>", unsafe_allow_html=True)
-        
-        # Cerramos la caja HTML de forma segura
-        st.html('</div>')
 
-
-# ===== 🛠️ LÓGICA DE SIMULACIÓN INTERACTIVA =====
-if pvc_seleccionados:
-    cant_especies = 1234 // len(lista_pvc) * len(pvc_seleccionados)
-    cant_visitantes = 8942 // len(lista_pvc) * len(pvc_seleccionados)
-    cant_alertas = max(1, len(pvc_seleccionados) - 6)
-    texto_delta = f"Filtrado para {len(pvc_seleccionados)} PVC"
-else:
-    cant_especies = 1234
-    cant_visitantes = 8942
-    cant_alertas = 3
-    texto_delta = "Total general de la RNTAM"
-
-
-# ===== 🔵 COLUMNA CENTRAL (50%) - CONTENIDO PRINCIPAL =====
-with col_center:
-    # [ZONA 17-24] - Métricas Clave
-    st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 0 0 10px 0;">📊 MÉTRICAS CLAVE</h3>', unsafe_allow_html=True)
-    
-    m1, m2, m3 = st.columns(3)
-    with m1:
-        st.metric(label="🦋 Especies registradas", value=f"{cant_especies:,}", delta=texto_delta)
-    with m2:
-        st.metric(label="👥 Visitantes 2025", value=f"{cant_visitantes:,}", delta=texto_delta)
-    with m3:
-        st.metric(label="🔥 Alertas SMART", value=str(cant_alertas), delta="Riesgo de presiones", delta_color="inverse")
-        
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Área del mapa interactivo
-    st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin: 10px 0 0 0;">🗺️ ZONIFICACIÓN Y MONITOREO</h3>', unsafe_allow_html=True)
-    
-    texto_mapa = f"Enfocando visor en: {', '.join(pvc_seleccionados)}" if pvc_seleccionados else "Vista general de la Reserva Nacional Tambopata"
-    
-    st.markdown(f"""
-    <div class="map-container">
-        🗺️ <strong>MAPA INTERACTIVO DE LA RESERVA</strong><br>
-        <span style="font-size: 0.95rem; color: #1e3a1e; font-weight: bold;">📍 {texto_mapa}</span><br>
-        <span style="font-size: 0.85rem; color: #555;">(Pronto reemplazaremos esta caja por el mapa real de Folium con zoom automático)</span>
+    st.markdown("""
+    <div class="panel-box">
+    <h3 style="text-align:center;color:#1e3a1e;">
+    🌱 PANEL DE CONTROL
+    </h3>
     </div>
     """, unsafe_allow_html=True)
 
+    pvc_seleccionados = st.multiselect(
+        "🔍 Filtrar por Puesto de Control",
+        options=lista_pvc,
+        placeholder="Mostrando toda la Reserva..."
+    )
 
-# ===== 🟡 COLUMNA DERECHA (25%) - ACTIVIDAD RECIENTE =====
+    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+
+    st.info(
+        "Usa el filtro para aislar estadísticas de uno o varios PVC."
+    )
+
+# ==========================================================
+# MÉTRICAS SIMULADAS
+# ==========================================================
+if pvc_seleccionados:
+
+    cant_especies = (
+        1234 // len(lista_pvc)
+    ) * len(pvc_seleccionados)
+
+    cant_visitantes = (
+        8942 // len(lista_pvc)
+    ) * len(pvc_seleccionados)
+
+    cant_alertas = max(
+        1,
+        len(pvc_seleccionados) - 6
+    )
+
+    texto_delta = (
+        f"{len(pvc_seleccionados)} PVC seleccionados"
+    )
+
+else:
+
+    cant_especies = 1234
+    cant_visitantes = 8942
+    cant_alertas = 3
+
+    texto_delta = "Total general RNTAM"
+
+# ==========================================================
+# COLUMNA CENTRAL
+# ==========================================================
+with col_center:
+
+    st.subheader("📊 MÉTRICAS CLAVE")
+
+    m1, m2, m3 = st.columns(3)
+
+    with m1:
+        st.metric(
+            "🦋 Especies registradas",
+            f"{cant_especies:,}",
+            texto_delta
+        )
+
+    with m2:
+        st.metric(
+            "👥 Visitantes 2025",
+            f"{cant_visitantes:,}",
+            texto_delta
+        )
+
+    with m3:
+        st.metric(
+            "🔥 Alertas SMART",
+            cant_alertas,
+            "Riesgo de presiones",
+            delta_color="inverse"
+        )
+
+    st.markdown("")
+
+    st.subheader("🗺️ ZONIFICACIÓN Y MONITOREO")
+
+    texto_mapa = (
+        "Vista general de la Reserva Nacional Tambopata"
+        if not pvc_seleccionados
+        else "Enfocando: " + ", ".join(pvc_seleccionados)
+    )
+
+    st.markdown(f"""
+    <div class="map-box">
+        <h4>🗺️ MAPA INTERACTIVO DE LA RESERVA</h4>
+
+        <b>{texto_mapa}</b>
+
+        <br><br>
+
+        <span style="color:#666;">
+        Aquí irá el mapa Folium con zoom automático.
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==========================================================
+# PANEL DERECHO
+# ==========================================================
 with col_right:
-    contenedor_der = st.container()
-    with contenedor_der:
-        # Abrimos la caja del panel lateral derecho con el nuevo método blindado
-        st.html('<div class="panel-lateral-fijo">')
-        
-        st.markdown('<h3 style="color: #1e3a1e; font-size: 1.2rem; font-weight: bold; margin-top: 0; text-align: center;">📢 ACTIVIDAD RECIENTE</h3>', unsafe_allow_html=True)
-        st.markdown('<hr style="border: 0; height: 1px; background-color: #cedfce; margin: 10px 0;">', unsafe_allow_html=True)
-        st.markdown("""
-            <ul style="font-size: 0.9rem; color: #333; padding-left: 20px; line-height: 1.6; margin-top: 15px;">
-                <li>Sincronización con SMART activa de forma correcta.</li>
-                <li>Monitoreo en patrullajes sin alertas rojas hoy.</li>
-                <li>Puestos de vigilancia reportando conformidad.</li>
-            </ul>
-        """, unsafe_allow_html=True)
-        
-        # Cerramos de forma segura
-        st.html('</div>')
+
+    st.markdown("""
+    <div class="panel-box">
+    <h3 style="text-align:center;color:#1e3a1e;">
+    📢 ACTIVIDAD RECIENTE
+    </h3>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    • Sincronización con SMART activa correctamente.
+
+    • Patrullajes sin alertas rojas.
+
+    • Puestos de vigilancia reportando conformidad.
+
+    • Monitoreo actualizado.
+
+    • Datos sincronizados con éxito.
+    """)
