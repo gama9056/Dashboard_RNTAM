@@ -61,10 +61,24 @@ st.markdown("""
 st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 
 # ==========================================================
-# 🗺️ CARGA VECTORIAL MULTICAPA (AUTOMÁTICA)
+# 🗺️ CARGA VECTORIAL MULTICAPA PROTEGIDA
 # ==========================================================
 @st.cache_data
 def cargar_capas_geograficas():
+    # --- FUNCIÓN INTERNA PARA SANEAR ATRIBUTOS CON FECHAS CONTAMINANTES ---
+    def limpiar_columnas_tiempo(gdf):
+        if gdf is None or gdf.empty:
+            return gdf
+        # Convertir tipos datetime/timedelta nativos a texto
+        for col in gdf.select_dtypes(include=['datetime64', 'timedelta64']).columns:
+            gdf[col] = gdf[col].astype(str)
+        # Buscar columnas tipo objeto que puedan contener timestamps o textos sospechosos
+        for col in gdf.select_dtypes(include=['object']).columns:
+            col_lower = col.lower()
+            if 'fecha' in col_lower or 'felea' in col_lower or 'date' in col_lower:
+                gdf[col] = gdf[col].astype(str)
+        return gdf
+
     # 1. CARGA Y UNIFICACIÓN DE LOS 9 ÁMBITOS DE CONTROL PVC
     lista_gdfs = []
     archivos_zip = glob.glob("data/Ambito_de_control_*.zip")
@@ -76,6 +90,8 @@ def cargar_capas_geograficas():
     for ruta in archivos_zip:
         if os.path.exists(ruta):
             gdf_pvc = gpd.read_file(f"zip://{ruta}").to_crs("EPSG:4326")
+            gdf_pvc = limpiar_columnas_tiempo(gdf_pvc)
+                
             nombre_archivo = os.path.basename(ruta).replace(".zip", "")
             nombre_pvc = nombre_archivo.replace("Ambito_de_control_", "PVC ").replace("_", " ")
             gdf_pvc["NOM_PVC"] = nombre_pvc
@@ -90,6 +106,7 @@ def cargar_capas_geograficas():
     ruta_anp = "data/ANP_RNTAM.zip"
     if os.path.exists(ruta_anp):
         gdf_anp = gpd.read_file(f"zip://{ruta_anp}").to_crs("EPSG:4326")
+        gdf_anp = limpiar_columnas_tiempo(gdf_anp)
     else:
         gdf_anp = gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:4326")
 
@@ -97,17 +114,18 @@ def cargar_capas_geograficas():
     ruta_za = "data/ZA_RNTAM.zip"
     if os.path.exists(ruta_za):
         gdf_za = gpd.read_file(f"zip://{ruta_za}").to_crs("EPSG:4326")
+        gdf_za = limpiar_columnas_tiempo(gdf_za)
     else:
         gdf_za = gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:4326")
         
     return gdf_ambitos, gdf_anp, gdf_za
 
-# Ejecutamos la lectura del entorno real en GitHub
+# Ejecutamos la lectura real limpia de datos
 gdf_ambitos, gdf_anp, gdf_za = cargar_capas_geograficas()
 lista_pvc = sorted(gdf_ambitos["NOM_PVC"].unique().tolist()) if not gdf_ambitos.empty else []
 
 # ==========================================================
-# COLUMNAS PRINCIPALES
+# COLUMNAS PRINCIPALES (1:2:1)
 # ==========================================================
 col_left, col_center, col_right = st.columns([1, 2, 1], gap="large")
 
