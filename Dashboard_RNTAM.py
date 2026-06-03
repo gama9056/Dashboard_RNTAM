@@ -127,60 +127,85 @@ datos_deforestacion_exclusiva = {
 # ==========================================================
 col_left, col_center, col_right = st.columns([1, 2, 1], gap="medium")
 
+
 # ==========================================================
 # PANEL IZQUIERDO: CONTENIDO (Tabla de Contenidos Estructurada)
 # ==========================================================
 simbologia_sectores = {}
 capas_seleccionadas_nombres = []
-gdf_usuario = None
-nombre_capa_usuario = ""
 
-with col_left:
-    with st.container(height=780, border=True):
-        st.markdown("<h4 style='color: #1e1e1e; margin-top:0; margin-bottom:5px;'>📊 Contents</h4>", unsafe_allow_html=True)
-        st.caption("Estructura de Desplegables Cartográficos")
+# --- NUEVA LÓGICA: INICIALIZACIÓN DE MEMORIA PARA MÚLTIPLES SHAPEFILES ---
+if "capas_usuario" not in st.session_state:
+    st.session_state.capas_usuario = {}  # Almacena pares: {nombre_capa: gdf}
+
+# Variables de control para capas del usuario
+gdfs_usuario_activos = []
         
-        # --------------------------------------------------
-        # GRUPO 1: IMPORT EXTERNAL SHAPEFILE (.ZIP) - CERRADO POR DEFECTO
+# --------------------------------------------------
+        # GRUPO 1: IMPORT EXTERNAL SHAPEFILE (.ZIP) - MULTI-ARCHIVO
         # --------------------------------------------------
         with st.expander("📁 Import External Shapefile (.zip)", expanded=False):
-            archivo_subido = st.file_uploader(
-                "Subir archivo comprimido adicional:",
+            # accept_multiple_files=True permite arrastrar varios .zip a la vez o uno por uno
+            archivos_subidos = st.file_uploader(
+                "Subir uno o varios archivos comprimidos adicionales:",
                 type=["zip"],
-                key="uploader_manual"
+                key="uploader_manual",
+                accept_multiple_files=True
             )
-            if archivo_subido is not None:
-                try:
-                    with tempfile.TemporaryDirectory() as tmpdir:
-                        path_zip = os.path.join(tmpdir, archivo_subido.name)
-                        with open(path_zip, "wb") as f:
-                            f.write(archivo_subido.getbuffer())
-                        with zipfile.ZipFile(path_zip, "r") as zip_ref:
-                            zip_ref.extractall(tmpdir)
-                        archivos_shp = glob.glob(os.path.join(tmpdir, "**", "*.shp"), recursive=True)
-                        if archivos_shp:
-                            gdf_usuario = gpd.read_file(archivos_shp[0]).to_crs("EPSG:4326")
-                            gdf_usuario = sanitizar_geodataframe(gdf_usuario)
-                            nombre_capa_usuario = os.path.basename(archivos_shp[0]).replace(".shp", "")
-                            st.success(f"Capa '{nombre_capa_usuario}' cargada.")
-                        else:
-                            st.error("No hay archivo .shp dentro del .zip.")
-                except Exception as e:
-                    st.error(f"Error externo: {e}")
             
-            if gdf_usuario is not None and not gdf_usuario.empty:
+            if archivos_subidos:
+                for archivo in archivos_subidos:
+                    try:
+                        with tempfile.TemporaryDirectory() as tmpdir:
+                            path_zip = os.path.join(tmpdir, archivo.name)
+                            with open(path_zip, "wb") as f:
+                                f.write(archivo.getbuffer())
+                            with zipfile.ZipFile(path_zip, "r") as zip_ref:
+                                zip_ref.extractall(tmpdir)
+                            archivos_shp = glob.glob(os.path.join(tmpdir, "**", "*.shp"), recursive=True)
+                            
+                            if archivos_shp:
+                                gdf_temp = gpd.read_file(archivos_shp[0]).to_crs("EPSG:4326")
+                                gdf_temp = sanitizar_geodataframe(gdf_temp)
+                                nombre_capa_temp = os.path.basename(archivos_shp[0]).replace(".shp", "")
+                                
+                                # Guardar en la sesión si no existe para evitar re-lecturas innecesarias
+                                if nombre_capa_temp not in st.session_state.capas_usuario:
+                                    st.session_state.capas_usuario[nombre_capa_temp] = gdf_temp
+                                    st.toast(f"Capa '{nombre_capa_temp}' agregada al grupo temporal.", icon="✨")
+                            else:
+                                st.error(f"No hay archivo .shp dentro de {archivo.name}")
+                    except Exception as e:
+                        st.error(f"Error procesando {archivo.name}: {e}")
+            
+            # Renderizado dinámico del "Grupo Temporal" de capas cargadas
+            if st.session_state.capas_usuario:
                 st.markdown("---")
-                ver_capa_usuario = st.checkbox(f"✨ {nombre_capa_usuario}", value=False)
-                if ver_capa_usuario:
-                    with st.expander(f"🎨 Simbología - {nombre_capa_usuario}", expanded=False, key=f"exp_user_{nombre_capa_usuario}"):
-                        c1, c2 = st.columns(2)
-                        with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key="f_user")
-                        with c2: stroke_u = st.color_picker("Borde:", "#8e44ad", key="s_user")
-                        o1, o2 = st.columns(2)
-                        with o1: opac_f_u = st.slider("Opac. Relleno:", 0.0, 1.0, 0.4, step=0.1, key="sl_f_user")
-                        with o2: opac_s_u = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key="sl_s_user")
-                        simbologia_sectores[nombre_capa_usuario] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
-
+                st.caption("📦 Capas Temporales Cargadas")
+                
+                for nombre_capa, gdf_guardado in list(st.session_state.capas_usuario.items()):
+                    # Checkbox independiente por cada shapefile en memoria
+                    ver_capa = st.checkbox(f"✨ {nombre_capa}", value=False, key=f"chk_user_{nombre_capa}")
+                    if ver_capa:
+                        # Añadimos a la lista operativa para que el mapa lo dibuje
+                        capas_seleccionadas_nombres.append(nombre_capa)
+                        
+                        # Cada capa tiene su propia caja de control de simbología cerrada por defecto
+                        with st.expander(f"🎨 Simbología - {nombre_capa}", expanded=False, key=f"exp_user_{nombre_capa}"):
+                            c1, c2 = st.columns(2)
+                            with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key=f"f_user_{nombre_capa}")
+                            with c2: stroke_u = st.color_picker("Borde:", "#8e44ad", key=f"s_user_{nombre_capa}")
+                            o1, o2 = st.columns(2)
+                            with o1: opac_f_u = st.slider("Opac. Relleno:", 0.0, 1.0, 0.4, step=0.1, key=f"sf_user_{nombre_capa}")
+                            with o2: opac_s_u = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_user_{nombre_capa}")
+                            
+                            # Registramos la simbología individualmente
+                            simbologia_sectores[nombre_capa] = {
+                                "fillColor": fill_u, 
+                                "color": stroke_u, 
+                                "fillOpacity": opac_f_u, 
+                                "opacity": opac_s_u
+                            }
         # --------------------------------------------------
         # GRUPO 2: CAPAS INSTITUCIONALES - CERRADO POR DEFECTO
         # --------------------------------------------------
@@ -273,8 +298,11 @@ with col_left:
 # LÓGICA DE CONTROL DE ENCUADRE Y CÁLCULO CARTOGRÁFICO
 # ==========================================================
 gdfs_activos = [diccionario_capas[n] for n in capas_seleccionadas_nombres if n in diccionario_capas]
-if gdf_usuario is not None and 'ver_capa_usuario' in locals() and ver_capa_usuario:
-    gdfs_activos.append(gdf_usuario)
+
+# Añadir los GeoDataFrames temporales del usuario que estén activos
+for n in capas_seleccionadas_nombres:
+    if n in st.session_state.capas_usuario:
+        gdfs_activos.append(st.session_state.capas_usuario[n])
 
 if gdfs_activos:
     gdfs_combinados = pd.concat(gdfs_activos, ignore_index=True)
@@ -292,12 +320,6 @@ else:
     cant_alertas = 3
     texto_delta = "Filtro Base Institucional"
     datos_grafico = {}
-
-reporte_dinamico = """
-El análisis geoespacial enfocado de forma exclusiva en los sectores activos del catálogo muestra los escenarios de control vinculados a actividades de minería aurífera ilegal. La cuantificación detallada en estas zonas específicas revela el impacto directo sobre la cobertura boscosa que altera los ecosistemas protegidos dentro del área de influencia analizada.
-
-La información técnica procesada en esta vista proporciona los elementos de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
-"""
 
 # ==========================================================
 # PANEL CENTRAL (MÉTRICAS Y VISOR CARTOGRÁFICO DE COMANDO)
@@ -359,24 +381,24 @@ with col_center:
     if hay_puntos:
         fg_puntos.add_to(m)
 
-    # --- PINTAR LA CAPA COMPLEMENTARIA SUBIDA POR EL USUARIO ---
-    if gdf_usuario is not None and 'ver_capa_usuario' in locals() and ver_capa_usuario:
-        cfg_u = simbologia_sectores.get(nombre_capa_usuario, {"fillColor": "#9b59b6", "color": "#8e44ad", "fillOpacity": 0.4, "opacity": 1.0})
-        folium.GeoJson(
-            gdf_usuario,
-            name=f"✨ {nombre_capa_usuario}",
-            style_function=lambda x, f_c=cfg_u['fillColor'], s_c=cfg_u['color'], f_o=cfg_u['fillOpacity'], s_o=cfg_u['opacity']: {
-                'fillColor': f_c,
-                'color': s_c,
-                'weight': 2.5,
-                'fillOpacity': f_o,
-                'opacity': s_o
-            }
-        ).add_to(m)
-        
-    m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
-    st_folium(m, width="100%", height=420, returned_objects=[])
-
+# --- PINTAR LAS CAPAS COMPLEMENTARIAS SUBIDAS POR EL USUARIO (DINÁMICO) ---
+    for nombre_capa in capas_seleccionadas_nombres:
+        if nombre_capa in st.session_state.capas_usuario:
+            gdf_user_render = st.session_state.capas_usuario[nombre_capa]
+            cfg_u = simbologia_sectores.get(nombre_capa, {"fillColor": "#9b59b6", "color": "#8e44ad", "fillOpacity": 0.4, "opacity": 1.0})
+            
+            folium.GeoJson(
+                gdf_user_render,
+                name=f"✨ {nombre_capa}",
+                style_function=lambda x, f_c=cfg_u['fillColor'], s_c=cfg_u['color'], f_o=cfg_u['fillOpacity'], s_o=cfg_u['opacity']: {
+                    'fillColor': f_c,
+                    'color': s_c,
+                    'weight': 2.5,
+                    'fillOpacity': f_o,
+                    'opacity': s_o
+                }
+            ).add_to(m)
+            
 # ==========================================================
 # PANEL DERECHO (ANÁLISIS EXCLUSIVO DE PÉRDIDA BOSCOSA)
 # ==========================================================
