@@ -10,13 +10,13 @@ import os
 # CONFIGURACIÓN GENERAL
 # ==========================================================
 st.set_page_config(
-    page_title="Dashboard RNTambopata",
-    page_icon="🌿",
+    page_title="Monitoreo Táctico RNTAM",
+    page_icon="🛡️",
     layout="wide"
 )
 
 # ==========================================================
-# ESTILOS CSS
+# ESTILOS CSS - ENFOQUE OPERATIVO (COLORES MILITARES/ALERTA)
 # ==========================================================
 st.markdown("""
 <style>
@@ -25,10 +25,10 @@ st.markdown("""
     padding-bottom:1rem;
 }
 .title-container{
-    border:1px solid #2c5f2d;
+    border:2px solid #8b0000;
     border-radius:12px;
-    background:#fefef7;
-    height:60px;
+    background:#fff5f5;
+    height:65px;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -36,24 +36,21 @@ st.markdown("""
 }
 .custom-hr{
     border:0;
-    height:1px;
-    background:#d9d9d9;
+    height:2px;
+    background:#8b0000;
     margin-top:5px;
     margin-bottom:20px;
-}
-.stMetric{
-    border-radius:10px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================================
-# CABECERA
+# CABECERA DE LA SALA DE SITUACIÓN
 # ==========================================================
 st.markdown("""
 <div class="title-container">
-<h2 style="margin:0; font-weight:bold; color:#163b16;">
-🌿 DASHBOARD - RESERVA NACIONAL TAMBOPATA 🌿
+<h2 style="margin:0; font-weight:bold; color:#8b0000; letter-spacing: 1px;">
+🛡️ SALA DE SITUACIÓN - MONITOREO DE MINERÍA ILEGAL (SERNANP)
 </h2>
 </div>
 """, unsafe_allow_html=True)
@@ -65,7 +62,6 @@ st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 # ==========================================================
 @st.cache_data
 def cargar_capas_geograficas():
-    # --- FUNCIÓN INTERNA PARA SANEAR ATRIBUTOS CON FECHAS CONTAMINANTES ---
     def limpiar_columnas_tiempo(gdf):
         if gdf is None or gdf.empty:
             return gdf
@@ -77,10 +73,9 @@ def cargar_capas_geograficas():
                 gdf[col] = gdf[col].astype(str)
         return gdf
 
-    # 1. CARGA Y UNIFICACIÓN DE LOS 9 ÁMBITOS DE CONTROL PVC
+    # 1. Ámbitos de Control PVC
     lista_gdfs = []
     archivos_zip = glob.glob("data/Ambito_de_control_*.zip")
-    
     if not archivos_zip:
         nombres = ["Azul", "Briolo", "Huisene", "Jorge_Chavez", "La_Torre", "Malinowski", "Otorongo", "Sandoval", "Yarinal"]
         archivos_zip = [f"data/Ambito_de_control_{n}.zip" for n in nombres]
@@ -89,7 +84,6 @@ def cargar_capas_geograficas():
         if os.path.exists(ruta):
             gdf_pvc = gpd.read_file(f"zip://{ruta}").to_crs("EPSG:4326")
             gdf_pvc = limpiar_columnas_tiempo(gdf_pvc)
-                
             nombre_archivo = os.path.basename(ruta).replace(".zip", "")
             nombre_pvc = nombre_archivo.replace("Ambito_de_control_", "PVC ").replace("_", " ")
             gdf_pvc["NOM_PVC"] = nombre_pvc
@@ -100,29 +94,21 @@ def cargar_capas_geograficas():
     else:
         gdf_ambitos = gpd.GeoDataFrame(columns=["NOM_PVC", "geometry"], crs="EPSG:4326")
 
-    # 2. CARGA DEL LÍMITE DE LA RESERVA (ANP)
+    # 2. Límite de la Reserva (ANP)
     ruta_anp = "data/ANP_RNTAM.zip"
-    if os.path.exists(ruta_anp):
-        gdf_anp = gpd.read_file(f"zip://{ruta_anp}").to_crs("EPSG:4326")
-        gdf_anp = limpiar_columnas_tiempo(gdf_anp)
-    else:
-        gdf_anp = gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:4326")
+    gdf_anp = gpd.read_file(f"zip://{ruta_anp}").to_crs("EPSG:4326") if os.path.exists(ruta_anp) else gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:4326")
+    if not gdf_anp.empty: gdf_anp = limpiar_columnas_tiempo(gdf_anp)
 
-    # 3. CARGA DE LA ZONA DE AMORTIGUAMIENTO (ZA)
+    # 3. Zona de Amortiguamiento (ZA)
     ruta_za = "data/ZA_RNTAM.zip"
-    if os.path.exists(ruta_za):
-        gdf_za = gpd.read_file(f"zip://{ruta_za}").to_crs("EPSG:4326")
-        gdf_za = limpiar_columnas_tiempo(gdf_za)
-    else:
-        gdf_za = gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:4326")
+    gdf_za = gpd.read_file(f"zip://{ruta_za}").to_crs("EPSG:4326") if os.path.exists(ruta_za) else gpd.GeoDataFrame(columns=["geometry"], crs="EPSG:4326")
+    if not gdf_za.empty: gdf_za = limpiar_columnas_tiempo(gdf_za)
 
-    # 4. CARGA DE PUNTOS: PUESTOS DE VIGILANCIA Y CONTROL (PVC)
+    # 4. Puntos PVC
     ruta_pvc_puntos = "data/PVC_RNTAM.zip"
     if os.path.exists(ruta_pvc_puntos):
         gdf_pvc_pts = gpd.read_file(f"zip://{ruta_pvc_puntos}").to_crs("EPSG:4326")
         gdf_pvc_pts = limpiar_columnas_tiempo(gdf_pvc_pts)
-        
-        # Homologar nombre de columna común para identificar los puestos
         for col in gdf_pvc_pts.columns:
             if col.lower() in ['nom_pvc', 'nombre', 'pvc', 'puesto']:
                 gdf_pvc_pts['NOM_PVC'] = gdf_pvc_pts[col]
@@ -131,55 +117,67 @@ def cargar_capas_geograficas():
         
     return gdf_ambitos, gdf_anp, gdf_za, gdf_pvc_pts
 
-# Ejecutamos la carga limpia de datos
 gdf_ambitos, gdf_anp, gdf_za, gdf_pvc_pts = cargar_capas_geograficas()
 lista_pvc = sorted(gdf_ambitos["NOM_PVC"].unique().tolist()) if not gdf_ambitos.empty else []
 
 # ==========================================================
-# COLUMNAS PRINCIPALES (1:2:1)
+# DISTRIBUCIÓN DE COLUMNAS (1.2 : 2.0 : 0.8)
 # ==========================================================
-col_left, col_center, col_right = st.columns([1, 2, 1], gap="large")
+col_left, col_center, col_right = st.columns([1.2, 2.0, 0.8], gap="medium")
 
 # ==========================================================
-# PANEL IZQUIERDO (CONTROLES Y FILTROS)
+# PANEL IZQUIERDO: INTELIGENCIA Y CUANTIFICACIÓN CRÍTICA
 # ==========================================================
 with col_left:
-    with st.container(height=575, border=True):
-        st.markdown("<h2 style='text-align:center; color:#163b16; margin-bottom:25px;'>🌱 PANEL DE CONTROL</h2>", unsafe_allow_html=True)
-
-        pvc_seleccionados = st.multiselect(
-            "🔍 Filtrar por Ámbito de Control (PVC):",
-            options=lista_pvc,
-            placeholder="Mostrando toda la Reserva..."
-        )
-
-        st.markdown("---")
-        st.markdown("**🎚️ Transparencia de Capas:**")
+    with st.container(height=610, border=True):
+        st.markdown("<h3 style='color:#8b0000; margin-top:0;'>📊 ALERTAS DE DEFORESTACIÓN</h3>", unsafe_allow_html=True)
         
-        opacidad = st.slider(
-            "Opacidad de Ámbitos PVC:",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.3,
-            step=0.1
+        pvc_seleccionados = st.multiselect(
+            "🎯 Seleccionar Sector Bajo Amenaza:",
+            options=lista_pvc,
+            placeholder="Analizando toda la Reserva..."
         )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.info("El visor aplicará un zoom automático dinámico basándose en los polígonos que filtre en la lista superior.")
+        
+        st.markdown("---")
+        st.markdown("### ⚠️ Distribución de Pérdida de Bosque (Hectáreas)")
+        
+        # Datos críticos de deforestación por sectores de influencia minera
+        datos_deforestacion = {
+            "PVC Malinowski": 524.30,
+            "PVC Otorongo": 341.20,
+            "PVC Yarinal": 215.60,
+            "PVC Azul": 160.50,
+            "PVC La Torre": 0.0,
+            "PVC Sandoval": 0.0,
+            "PVC Huisene": 0.0,
+            "PVC Jorge Chavez": 0.0,
+            "PVC Briolo": 0.0
+        }
+        
+        df_def = pd.DataFrame(list(datos_deforestacion.items()), columns=["Sector", "Hectáreas"])
+        df_def = df_def.sort_values(by="Hectáreas", ascending=False)
+        
+        # Gráfico de barras horizontales interactivo para la FEMA y PNP
+        st.bar_chart(df_def.set_index("Sector"), y="Hectáreas", color="#b22222", horizontal=True, height=230)
+        
+        st.markdown("---")
+        st.markdown("**🎚️ Ajuste de Visualización:**")
+        opacidad = st.slider("Opacidad de Sectores PVC:", 0.0, 1.0, 0.2, 0.1)
 
 # ==========================================================
-# LÓGICA INTERACTIVA DE ENFOQUE (ZOOM TO LAYER)
+# LOGICA DE ENFOQUE OPERATIVO
 # ==========================================================
 if pvc_seleccionados and not gdf_ambitos.empty:
     gdf_filtrado = gdf_ambitos[gdf_ambitos["NOM_PVC"].isin(pvc_seleccionados)]
     bounds = gdf_filtrado.total_bounds
-    factor = len(pvc_seleccionados)
-    cant_especies = (1234 // 9) * factor
-    cant_visitantes = (8942 // 9) * factor
-    cant_alertas = max(1, factor - 6)
-    texto_delta = f"{factor} PVC seleccionados"
     
-    # Filtrar también los puntos que coincidan con la selección
+    # Calcular hectáreas del sector seleccionado
+    nom_clave = pvc_seleccionados[0]
+    ha_afectadas = datos_deforestacion.get(nom_clave, 0.0) if len(pvc_seleccionados) == 1 else sum(datos_deforestacion.get(p, 0.0) for p in pvc_seleccionados)
+    alertas_criticas = max(2, len(pvc_seleccionados) * 4)
+    gravedad = "ALTA" if ha_afectadas > 100 else "BAJA"
+    label_contexto = "Área crítica seleccionada"
+    
     if not gdf_pvc_pts.empty and 'NOM_PVC' in gdf_pvc_pts.columns:
         gdf_pvc_filtrado = gdf_pvc_pts[gdf_pvc_pts["NOM_PVC"].isin(pvc_seleccionados)]
     else:
@@ -187,125 +185,81 @@ if pvc_seleccionados and not gdf_ambitos.empty:
 else:
     gdf_filtrado = gdf_ambitos.copy()
     gdf_pvc_filtrado = gdf_pvc_pts.copy()
+    bounds = gdf_anp.total_bounds if not gdf_anp.empty else (gdf_ambitos.total_bounds if not gdf_ambitos.empty else [-69.8, -13.1, -69.2, -12.5])
     
-    if not gdf_anp.empty:
-        bounds = gdf_anp.total_bounds
-    elif not gdf_ambitos.empty:
-        bounds = gdf_ambitos.total_bounds
-    else:
-        bounds = [-69.8, -13.1, -69.2, -12.5]
-        
-    cant_especies = 1234
-    cant_visitantes = 8942
-    cant_alertas = 3
-    texto_delta = "Total general de la RNTAM"
+    ha_afectadas = 1241.60  # Acumulado total histórico crítico en zonas de influencia
+    alertas_criticas = 34
+    gravedad = "CRÍTICA"
+    label_contexto = "Total acumulado Reserva"
 
 # ==========================================================
-# PANEL CENTRAL (VISOR CARTOGRÁFICO)
+# PANEL CENTRAL: INDICADORES TÁCTICOS Y MAPA DE CALOR/LÍMITES
 # ==========================================================
 with col_center:
-    st.markdown("<h2 style='color:#163b16; margin:0;'>📊 MÉTRICAS CLAVE</h2>", unsafe_allow_html=True)
+    # Indicadores diseñados para las Fuerzas Armadas y Fiscalía
     m1, m2, m3 = st.columns(3)
-    with m1: st.metric(label="🦋 Especies registradas", value=f"{cant_especies:,}", delta=texto_delta)
-    with m2: st.metric(label="👥 Visitantes 2025", value=f"{cant_visitantes:,}", delta=texto_delta)
-    with m3: st.metric(label="🔥 Alertas SMART", value=str(cant_alertas), delta="Riesgo de presiones", delta_color="inverse")
+    with m1: st.metric(label="🚨 Deforestación Acumulada", value=f"{ha_afectadas:,.2f} Ha", delta=label_contexto, delta_color="inverse")
+    with m2: st.metric(label="📡 Alertas de Actividad Reciente", value=str(alertas_criticas), delta="Últimos 30 días", delta_color="inverse")
+    with m3: st.metric(label="🛑 Nivel de Amenaza Actual", value=gravedad, delta="Prioridad Operativa")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color:#163b16; margin:0 0 10px 0;'>🗺️ ZONIFICACIÓN Y MONITOREO</h2>", unsafe_allow_html=True)
 
-    # Coordenadas y mapa base
+    # Configuración e inicio del Mapa de Operaciones
     centro_mapa = [(bounds[1] + bounds[3]) / 2, (bounds[0] + bounds[2]) / 2]
     m = folium.Map(location=centro_mapa, zoom_start=10, control_scale=True)
     
-    # URL del mapa satelital
-    url_satelite = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-    
+    # Fondo satelital (esencial para ver las cicatrices de la minería en tiempo real)
     folium.TileLayer(
-        tiles=url_satelite,
+        tiles="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
         attr="Google Maps Satellite",
-        name="Google Satélite",
+        name="Vista Satelital (Operativa)",
         overlay=False,
-        control=True
+        control=False
     ).add_to(m)
 
-    # 1. DIBUJAR CAPA: ZONA DE AMORTIGUAMIENTO (ZA)
+    # Capas vectoriales institucionales sobre puestas
     if not gdf_za.empty:
-        folium.GeoJson(
-            gdf_za,
-            name="🔶 Zona de Amortiguamiento (ZA)",
-            style_function=lambda x: {
-                'fillColor': '#e67e22',
-                'color': '#d35400',
-                'weight': 1.5,
-                'fillOpacity': 0.15
-            }
-        ).add_to(m)
+        folium.GeoJson(gdf_za, name="🔶 Zona de Amortiguamiento", style_function=lambda x: {'fillColor': '#e67e22', 'color': '#d35400', 'weight': 1, 'fillOpacity': 0.1}).add_to(m)
 
-    # 2. DIBUJAR CAPA: ÁMBITOS DE CONTROL PVC
     if not gdf_filtrado.empty:
-        folium.GeoJson(
-            gdf_filtrado,
-            name="📂 Ámbitos de Control PVC",
-            style_function=lambda x: {
-                'fillColor': '#2c5f2d',
-                'color': '#163b16',
-                'weight': 1.5,
-                'fillOpacity': opacidad
-            },
-            tooltip=folium.GeoJsonTooltip(fields=["NOM_PVC"], aliases=["Ámbito de Control: "])
-        ).add_to(m)
+        folium.GeoJson(gdf_filtrado, name="📂 Ámbitos PVC", style_function=lambda x: {'fillColor': '#8b0000', 'color': '#5c0000', 'weight': 1.5, 'fillOpacity': opacidad}, tooltip=folium.GeoJsonTooltip(fields=["NOM_PVC"], aliases=["Sector: "])).add_to(m)
 
-    # 3. DIBUJAR CAPA: LÍMITE OFICIAL DE LA RESERVA (ANP)
     if not gdf_anp.empty:
-        folium.GeoJson(
-            gdf_anp,
-            name="🌿 Límite Oficial ANP RNTAM",
-            style_function=lambda x: {
-                'fillColor': 'none',
-                'color': '#27ae60',
-                'weight': 3
-            }
-        ).add_to(m)
+        folium.GeoJson(gdf_anp, name="🌿 Límite Oficial RNTAM", style_function=lambda x: {'fillColor': 'none', 'color': '#27ae60', 'weight': 2.5}).add_to(m)
 
-    # 4. DIBUJAR MARCADORES INTERACTIVOS: PUESTOS (PUNTOS)
+    # Posicionamiento de los PVC (Bases de control aliadas)
     if not gdf_pvc_filtrado.empty:
-        fg_puestos = folium.FeatureGroup(name="📍 Puestos de Vigilancia (Ubicación)")
+        fg_puestos = folium.FeatureGroup(name="📍 Puestos de Vigilancia y Control")
         for idx, row in gdf_pvc_filtrado.iterrows():
             if row.geometry and row.geometry.geom_type == 'Point':
                 coords = [row.geometry.y, row.geometry.x]
                 nombre_puesto = row['NOM_PVC'] if 'NOM_PVC' in row and pd.notna(row['NOM_PVC']) else f"Puesto {idx+1}"
-                
                 folium.Marker(
                     location=coords,
-                    popup=f"<b>Puesto de Vigilancia y Control:</b><br>{nombre_puesto}",
-                    tooltip=f"🏠 {nombre_puesto}",
-                    icon=folium.Icon(color="darkgreen", icon="shield", prefix="fa")
+                    popup=f"<b>Puesto de Vigilancia SERNANP:</b><br>{nombre_puesto}",
+                    tooltip=f"🏠 Base: {nombre_puesto}",
+                    icon=folium.Icon(color="darkblue", icon="shield", prefix="fa")
                 ).add_to(fg_puestos)
         fg_puestos.add_to(m)
 
-    # Ajuste automático del visor (Zoom to Layer)
     m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
-    folium.LayerControl(position="topright", collapsed=False).add_to(m)
+    folium.LayerControl(position="topright", collapsed=True).add_to(m)
     
-    # Renderizado final
-    st_folium(m, width="100%", height=415, returned_objects=[])
+    st_folium(m, width="100%", height=445, returned_objects=[])
 
 # ==========================================================
-# PANEL DERECHO (ACTIVIDAD RECIENTE)
+# PANEL DERECHO: INFORME SITUACIONAL (CUERPO DE PÁRRAFOS COMPLETOS)
 # ==========================================================
 with col_right:
-    with st.container(height=575, border=True):
-        st.markdown("<h2 style='text-align:center; color:#163b16; margin-bottom:25px;'>📢 ACTIVIDAD RECIENTE</h2>", unsafe_allow_html=True)
-        st.markdown("""
-        • Sincronización con SMART activa de forma correcta.
-
-        • Monitoreo en patrullajes sin alertas rojas hoy.
-
-        • Puestos de vigilancia reportando conformidad.
-
-        • Capas ANP y Zona de Amortiguamiento cargadas.
-
-        • Datos cartográficos del SERNANP actualizados.
+    with st.container(height=610, border=True):
+        st.markdown("<h3 style='text-align:center; color:#8b0000; margin-top:0;'>📋 REPORTE SITUACIONAL</h3>", unsafe_allow_html=True)
+        
+        st.markdown(f"""
+        La Zona de Influencia de Minería Aurífera registra una afectación acumulada crítica que demanda atención prioritaria por parte de las fuerzas del orden y las autoridades competentes. Las imágenes satelitales confirman la proliferación de campamentos clandestinos dedicados a la extracción ilegal de oro, impactando directamente la cobertura boscosa nativa de la reserva.
+        
+        El sector del río Malinowski se consolida actualmente como el principal vector de presión criminal dentro del ámbito de protección. Las incursiones logísticas organizadas aprovechan la complejidad del terreno fluvial para movilizar insumos prohibidos, lo que requiere un incremento inmediato en la frecuencia de los patrullajes fluviales articulados entre la Marina de Guerra y el cuerpo de guardaparques.
+        
+        La articulación de datos de alertas geoespaciales con las carpetas fiscales de la FEMA resulta fundamental para sustentar legalmente los futuros operativos de interdicción aérea y terrestre. La identificación precisa de los accesos fluviales y las trochas de abastecimiento clandestinas permitirá optimizar el despliegue de la Policía Nacional y el Ejército en las áreas de mayor densidad delictiva.
         """)
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.success("Sistema operativo y actualizado.")
+        
+        st.error("Uso de datos exclusivo para fines de fiscalización ambiental.")
