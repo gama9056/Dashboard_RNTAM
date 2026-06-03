@@ -46,9 +46,9 @@ st.markdown("""
 .stMetric{
     border-radius:10px;
 }
-/* Optimización de espaciado para expanders anidados */
+/* Espaciado ultra-compacto para los sub-expanders */
 .stExpander {
-    margin-bottom: 6px !important;
+    margin-bottom: 4px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -67,7 +67,7 @@ st.markdown("""
 st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 
 # ==========================================================
-# 🗺️ LÓGICA DE LIMPIEZA TOTAL PARA EVITAR ERRORES DE FECHAS
+# 🗺️ LÓGICA DE SANITIZACIÓN GEOESPACIAL
 # ==========================================================
 def sanitizar_geodataframe(gdf):
     """Elimina o convierte a texto cualquier columna temporal que Folium no pueda serializar"""
@@ -85,7 +85,7 @@ def sanitizar_geodataframe(gdf):
     return gdf
 
 # ==========================================================
-# 📊 ESCANEO AUTOMÁTICO DE ARCHIVOS ZIP EN LA CARPETA DATA/
+# 📊 ESCANEO AUTOMÁTICO DE ARCHIVOS ZIP (DATA/)
 # ==========================================================
 @st.cache_data
 def escanear_capas_locales(directorio="data"):
@@ -109,7 +109,7 @@ def escanear_capas_locales(directorio="data"):
             
     return capas_detectadas
 
-# Carga e inventariado automático
+# Carga e inventariado
 diccionario_capas = escanear_capas_locales()
 
 # Base analítica de deforestación por hectáreas
@@ -171,12 +171,11 @@ with col_left:
                 except Exception as e:
                     st.error(f"Error externo: {e}")
             
-            # Interfaz de la capa externa cuando ya fue procesada de forma segura
             if gdf_usuario is not None and not gdf_usuario.empty:
                 st.markdown("---")
                 ver_capa_usuario = st.checkbox(f"✨ {nombre_capa_usuario}", value=False)
                 if ver_capa_usuario:
-                    # Sub-expander de simbología cerrado por defecto para no saturar al abrir el principal
+                    # Cerrado por defecto (expanded=False) tal como se solicitó
                     with st.expander(f"🎨 Simbología - {nombre_capa_usuario}", expanded=False):
                         c1, c2 = st.columns(2)
                         with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key="f_user")
@@ -192,7 +191,7 @@ with col_left:
         with st.expander("🗺️ Map Layers", expanded=True):
             capa_satelite = st.checkbox("Google Satellite Baseline", value=True)
         
-        # Clasificación de capas locales escaneadas de GitHub
+        # Filtro de nombres según repositorio local
         lista_todos_reps = sorted(list(diccionario_capas.keys()))
         capas_institucionales = [c for c in lista_todos_reps if "anp" in c.lower() or "za_" in c.lower() or "pvc" in c.lower()]
         capas_ambitos = [c for c in lista_todos_reps if "ambito" in c.lower()]
@@ -224,7 +223,7 @@ with col_left:
                     activo = st.checkbox(f"🔰 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        # Sub-expander de simbología cerrado por defecto para una vista más compacta
+                        # FIJADO EN EXPANSIÓN OCULTA (expanded=False) AL INICIAR EL VISOR
                         with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False):
                             c1, c2 = st.columns(2)
                             with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
@@ -254,7 +253,7 @@ with col_left:
                     activo = st.checkbox(f"🔸 {nombre_limpio}", value=False, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        # Sub-expander de simbología CERRADO POR DEFECTO para limpieza visual total al abrir el grupo
+                        # FIJADO EN EXPANSIÓN OCULTA (expanded=False) AL INICIAR EL VISOR
                         with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False):
                             c1, c2 = st.columns(2)
                             with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
@@ -313,14 +312,18 @@ with col_center:
         url_satelite = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
         folium.TileLayer(tiles=url_satelite, attr="Google Maps Satellite", name="Vista Satelital Operativa", overlay=False, control=False).add_to(m)
 
-    # --- RENDERIZADO DINÁMICO DE TODAS LAS CAPAS ACTIVAS ---
+    # --- SOLUCIÓN DE BUG DE INICIALIZACIÓN DE ENTORNO DE PUNTOS ---
+    fg_puntos = folium.FeatureGroup(name="Puntos de Control")
+    hay_puntos = False
+
+    # Renderizado dinámico seguro
     for nombre_capa in capas_seleccionadas_nombres:
         if nombre_capa in diccionario_capas and nombre_capa in simbologia_sectores:
             gdf_render = diccionario_capas[nombre_capa]
             config = simbologia_sectores[nombre_capa]
             
             if not gdf_render.empty and gdf_render.geometry.geom_type.iloc[0] == 'Point':
-                fg_puntos = folium.FeatureGroup(name="Puntos de Control")
+                hay_puntos = True
                 for idx, row in gdf_render.iterrows():
                     if row.geometry:
                         coords = [row.geometry.y, row.geometry.x]
@@ -334,7 +337,6 @@ with col_center:
                             fill_color=config["fillColor"],
                             fill_opacity=config["opacity"]
                         ).add_to(fg_puntos)
-                fg_puntos.add_to(m)
             else:
                 folium.GeoJson(
                     gdf_render,
@@ -347,6 +349,10 @@ with col_center:
                         'opacity': s_o
                     }
                 ).add_to(m)
+
+    # Añadir los puntos al mapa de Folium únicamente si fueron procesados
+    if hay_puntos:
+        fg_puntos.add_to(m)
 
     # --- PINTAR LA CAPA COMPLEMENTARIA SUBIDA POR EL USUARIO ---
     if gdf_usuario is not None and 'ver_capa_usuario' in locals() and ver_capa_usuario:
@@ -386,5 +392,4 @@ with col_right:
         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
         st.markdown("#### 📋 INFORME SITUACIONAL DEL FRENTE")
         
-        # El cuerpo de texto del reporte se mantiene estructurado en párrafos continuos profesionales
         st.markdown(reporte_dinamico)
