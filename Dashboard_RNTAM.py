@@ -122,6 +122,15 @@ datos_deforestacion_exclusiva = {
     "Ambito_de_control_Sandoval": 0.00
 }
 
+# Mapeo inverso amigable para el st.multiselect del Drawing Order
+def obtener_nombre_operativo(internal_name):
+    if "pvc" in internal_name.lower(): return "🔰 PVC RNTAM"
+    if "anp" in internal_name.lower(): return "🔰 ANP RNTAM"
+    if "za" in internal_name.lower(): return "🔰 ZA RNTAM"
+    if "ambito" in internal_name.lower():
+        return internal_name.replace("Ambito_de_control_", "🔸 Ámbito de control ").replace("_", " ")
+    return f"✨ {internal_name}"
+
 # ==========================================================
 # COLUMNAS PRINCIPALES (1 : 2 : 1)
 # ==========================================================
@@ -279,7 +288,6 @@ with col_left:
 # ==========================================================
 gdfs_activos = [diccionario_capas[n] for n in capas_seleccionadas_nombres if n in diccionario_capas]
 
-# Unificación de encuadres considerando múltiples capas cargadas por usuario
 for n in capas_seleccionadas_nombres:
     if n in st.session_state.capas_usuario:
         gdfs_activos.append(st.session_state.capas_usuario[n])
@@ -304,7 +312,7 @@ else:
 reporte_dinamico = """
 El análisis geoespacial enfocado de forma exclusiva en los sectores activos del catálogo muestra los escenarios de control vinculados a actividades de minería aurífera ilegal. La cuantificación detallada en estas zonas específicas revela el impacto directo sobre la cobertura boscosa que altera los ecosistemas protegidos dentro del área de influencia analizada.
 
-La información técnica procesada en esta vista proporciona los elementos de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
+La información técnica procesada en esta vista proporciona los elements de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
 """
 
 # ==========================================================
@@ -316,8 +324,26 @@ with col_center:
     with m1: st.metric(label="🚨 Área Deforestada Seleccionada", value=f"{ha_afectadas:,.2f} Ha", delta=texto_delta, delta_color="inverse")
     with m2: st.metric(label="📡 Alertas Críticas Activas", value=str(cant_alertas), delta="Focos Detectados en Capa", delta_color="inverse")
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<h3 style='color:#163b16; margin:0 0 10px 0;'>🗺️ VISOR DE COMANDO Y CONTROL</h3>", unsafe_allow_html=True)
     
+    st.markdown("<h3 style='color:#163b16; margin:0 0 5px 0;'>🗺️ VISOR DE COMANDO Y CONTROL</h3>", unsafe_allow_html=True)
+    
+    # --- NUEVO CONTROL DE ORDEN DE DIBUJO (DRAWING ORDER) ---
+    capas_ordenadas_para_dibujo = []
+    if capas_seleccionadas_nombres:
+        mapa_nombres = {obtener_nombre_operativo(n): n for n in capas_seleccionadas_nombres}
+        
+        # El multiselect arranca precargado con el orden de activación
+        seleccion_orden = st.multiselect(
+            "📚 Orden de dibujo (Las primeras de la lista se pintarán al fondo; las últimas se superpondrán encima):",
+            options=list(mapa_nombres.keys()),
+            default=list(mapa_nombres.keys()),
+            help="Puedes eliminar y volver a agregar etiquetas en este campo para reordenar las capas de mapa tal como en ArcGIS Pro."
+        )
+        # Reconstruimos la lista interna respetando fielmente el orden elegido por el usuario
+        capas_ordenadas_para_dibujo = [mapa_nombres[lbl] for lbl in seleccion_orden if lbl in mapa_nombres]
+    else:
+        capas_ordenadas_para_dibujo = []
+
     centro_mapa = [(bounds[1] + bounds[3]) / 2, (bounds[0] + bounds[2]) / 2]
     m = folium.Map(location=centro_mapa, zoom_start=11, control_scale=True)
     
@@ -328,8 +354,10 @@ with col_center:
     fg_puntos = folium.FeatureGroup(name="Puntos de Control")
     hay_puntos = False
     
-    # Renderizado seguro de capas del repositorio local
-    for nombre_capa in capas_seleccionadas_nombres:
+    # Renderizado iterativo basado estrictamente en la jerarquía del Drawing Order elegido
+    for nombre_capa in capas_ordenadas_para_dibujo:
+        
+        # CASO A: Capas locales del directorio /data
         if nombre_capa in diccionario_capas:
             gdf_render = diccionario_capas[nombre_capa]
             config = simbologia_sectores.get(nombre_capa, {"fillColor": "#27ae60", "color": "#1e7e34", "fillOpacity": 0.3, "opacity": 1.0})
@@ -362,12 +390,8 @@ with col_center:
                     }
                 ).add_to(m)
                 
-    if hay_puntos:
-        fg_puntos.add_to(m)
-
-    # --- PINTAR MÚLTIPLES CAPAS COMPLEMENTARIAS DEL USUARIO (DINÁMICO) ---
-    for nombre_capa in capas_seleccionadas_nombres:
-        if nombre_capa in st.session_state.capas_usuario:
+        # CASO B: Capas dinámicas cargadas por el usuario (.zip)
+        elif nombre_capa in st.session_state.capas_usuario:
             gdf_user_render = st.session_state.capas_usuario[nombre_capa]
             cfg_u = simbologia_sectores.get(nombre_capa, {"fillColor": "#9b59b6", "color": "#8e44ad", "fillOpacity": 0.4, "opacity": 1.0})
             
@@ -382,6 +406,9 @@ with col_center:
                     'opacity': s_o
                 }
             ).add_to(m)
+                
+    if hay_puntos:
+        fg_puntos.add_to(m)
         
     m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
     st_folium(m, width="100%", height=420, returned_objects=[])
