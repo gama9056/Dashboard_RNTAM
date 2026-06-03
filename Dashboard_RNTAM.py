@@ -160,18 +160,18 @@ datos_deforestacion_exclusiva = {
 }
 
 # ==========================================================
-# COLUMNAS PRINCIPALES (1.4 : 1.5 : 1.1) - Reajuste de ancho para acomodar la simbología avanzada
+# COLUMNAS PRINCIPALES (1.4 : 1.5 : 1.1) - Espacio óptimo para TOC con doble slider
 # ==========================================================
 col_left, col_center, col_right = st.columns([1.4, 1.5, 1.1], gap="medium")
 
 # ==========================================================
-# PANEL IZQUIERDO: CONTENIDO (ArcGIS Pro TOC con Control Total de Simbología)
+# PANEL IZQUIERDO: CONTENIDO (Control Total: Relleno y Borde Independientes)
 # ==========================================================
 simbologia_sectores = {}
 pvc_seleccionados = []
 
 with col_left:
-    with st.container(height=680, border=True):
+    with st.container(height=720, border=True):
         st.markdown("<h4 style='color: #1e1e1e; margin-top:0; margin-bottom:5px;'>📊 Contents</h4>", unsafe_allow_html=True)
         st.caption("Drawing Order & Advanced Symbology")
         
@@ -185,7 +185,7 @@ with col_left:
         ver_za = st.checkbox("🔶 Zona de Amortiguamiento (ZA)", value=True)
         ver_puestos = st.checkbox("📍 Bases de Control (Puntos)", value=True)
         
-        # --- CAPAS OPERATIVAS CON DOBLE SELECTOR DE COLOR Y OPACIDAD ---
+        # --- CAPAS OPERATIVAS CON CONTROL TOTAL DE ESTILO INDEPENDIENTE ---
         st.markdown("<div class='toc-header'>📂 Mining Areas of Concern (PVC)</div>", unsafe_allow_html=True)
         
         # 1. PVC MALINOWSKI
@@ -196,8 +196,10 @@ with col_left:
                 c1, c2 = st.columns(2)
                 with c1: fill_m = st.color_picker("Relleno:", "#b22222", key="f_m")
                 with c2: stroke_m = st.color_picker("Borde:", "#5c0000", key="s_m")
-                opac_m = st.slider("Opacidad Relleno:", 0.0, 1.0, 0.3, step=0.1, key="sl_m")
-                simbologia_sectores["PVC Malinowski"] = {"fillColor": fill_m, "color": stroke_m, "opacity": opac_m}
+                o1, o2 = st.columns(2)
+                with o1: opac_f_m = st.slider("Opac. Relleno:", 0.0, 1.0, 0.3, step=0.1, key="sl_f_m")
+                with o2: opac_s_m = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key="sl_s_m")
+                simbologia_sectores["PVC Malinowski"] = {"fillColor": fill_m, "color": stroke_m, "fillOpacity": opac_f_m, "opacity": opac_s_m}
         
         # 2. PVC OTORONGO
         c_otorongo = st.checkbox("🟧 PVC Otorongo", value=True)
@@ -207,8 +209,10 @@ with col_left:
                 c1, c2 = st.columns(2)
                 with c1: fill_o = st.color_picker("Relleno:", "#d35400", key="f_o")
                 with c2: stroke_o = st.color_picker("Borde:", "#8e2a00", key="s_o")
-                opac_o = st.slider("Opacidad Relleno:", 0.0, 1.0, 0.3, step=0.1, key="sl_o")
-                simbologia_sectores["PVC Otorongo"] = {"fillColor": fill_o, "color": stroke_o, "opacity": opac_o}
+                o1, o2 = st.columns(2)
+                with o1: opac_f_o = st.slider("Opac. Relleno:", 0.0, 1.0, 0.3, step=0.1, key="sl_f_o")
+                with o2: opac_s_o = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key="sl_s_o")
+                simbologia_sectores["PVC Otorongo"] = {"fillColor": fill_o, "color": stroke_o, "fillOpacity": opac_f_o, "opacity": opac_s_o}
         
         # 3. PVC YARINAL
         c_yarinal = st.checkbox("🟨 PVC Yarinal", value=True)
@@ -218,8 +222,10 @@ with col_left:
                 c1, c2 = st.columns(2)
                 with c1: fill_y = st.color_picker("Relleno:", "#f39c12", key="f_y")
                 with c2: stroke_y = st.color_picker("Borde:", "#b77000", key="s_y")
-                opac_y = st.slider("Opacidad Relleno:", 0.0, 1.0, 0.3, step=0.1, key="sl_y")
-                simbologia_sectores["PVC Yarinal"] = {"fillColor": fill_y, "color": stroke_y, "opacity": opac_y}
+                o1, o2 = st.columns(2)
+                with o1: opac_f_y = st.slider("Opac. Relleno:", 0.0, 1.0, 0.3, step=0.1, key="sl_f_y")
+                with o2: opac_s_y = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key="sl_s_y")
+                simbologia_sectores["PVC Yarinal"] = {"fillColor": fill_y, "color": stroke_y, "fillOpacity": opac_f_y, "opacity": opac_s_y}
         
         # 4. PVC AZUL
         c_azul = st.checkbox("🟦 PVC Azul", value=True)
@@ -229,8 +235,10 @@ with col_left:
                 c1, c2 = st.columns(2)
                 with c1: fill_a = st.color_picker("Relleno:", "#2980b9", key="f_a")
                 with c2: stroke_a = st.color_picker("Borde:", "#1a4f73", key="s_a")
-                opac_a = st.slider("Opacidad Relleno:", 0.0, 1.0, 0.3, step=0.1, key="sl_a")
-                simbologia_sectores["PVC Azul"] = {"fillColor": fill_a, "color": stroke_a, "opacity": opac_a}
+                o1, o2 = st.columns(2)
+                with o1: opac_f_a = st.slider("Opac. Relleno:", 0.0, 1.0, 0.3, step=0.1, key="sl_f_a")
+                with o2: opac_s_a = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key="sl_s_a")
+                simbologia_sectores["PVC Azul"] = {"fillColor": fill_a, "color": stroke_a, "fillOpacity": opac_f_a, "opacity": opac_s_a}
 
 # ==========================================================
 # LÓGICA INTERACTIVA DE SIMULTANEIDAD
@@ -260,7 +268,7 @@ if pvc_seleccionados and not gdf_ambitos.empty:
     else:
         gdf_pvc_filtrado = gdf_pvc_pts.copy()
 else:
-    gdf_filtrado = gpd.GeoDataFrame(columns=["NOM_PVC", "geometry"], crs="EPSG:4326")
+    gdf_filtrado = gpd.GeoDataFrame(columns["NOM_PVC", "geometry"], crs="EPSG:4326")
     gdf_pvc_filtrado = gpd.GeoDataFrame(columns=["geometry", "NOM_PVC"], crs="EPSG:4326")
     
     if not gdf_anp.empty: bounds = gdf_anp.total_bounds
@@ -297,7 +305,7 @@ with col_center:
     if ver_za and not gdf_za.empty:
         folium.GeoJson(gdf_za, name="🔶 Zona de Amortiguamiento (ZA)", style_function=lambda x: {'fillColor': '#e67e22', 'color': '#d35400', 'weight': 1.5, 'fillOpacity': 0.1}).add_to(m)
 
-    # --- SIMBOLOGÍA AVANZADA SEPARADA (FILL VS STROKE VS OPACITY) ---
+    # --- SIMBOLOGÍA AVANZADA CON DOBLE OPACIDAD ---
     if not gdf_filtrado.empty:
         for sector, config in simbologia_sectores.items():
             gdf_sector = gdf_filtrado[gdf_filtrado["NOM_PVC"] == sector]
@@ -305,12 +313,12 @@ with col_center:
                 folium.GeoJson(
                     gdf_sector,
                     name=f"📂 {sector}",
-                    style_function=lambda x, f_c=config['fillColor'], s_c=config['color'], o=config['opacity']: {
+                    style_function=lambda x, f_c=config['fillColor'], s_c=config['color'], f_o=config['fillOpacity'], s_o=config['opacity']: {
                         'fillColor': f_c,
                         'color': s_c,
-                        'weight': 2.5,        # Grosor de línea de borde óptimo para cartografía operativa
-                        'fillOpacity': o,
-                        'opacity': 1.0         # Mantener el contorno exterior siempre nítido y visible al 100%
+                        'weight': 2.5,
+                        'fillOpacity': f_o,
+                        'opacity': s_o
                     },
                     tooltip=folium.GeoJsonTooltip(fields=["NOM_PVC"], aliases=["Ámbito Operativo: "])
                 ).add_to(m)
@@ -325,20 +333,18 @@ with col_center:
                 coords = [row.geometry.y, row.geometry.x]
                 nombre_puesto = row['NOM_PVC'] if 'NOM_PVC' in row and pd.notna(row['NOM_PVC']) else f"Puesto {idx+1}"
                 
-                # Sincronizar el marcador del mapa con el color del borde de la capa correspondiente
-                color_borde_puesto = simbologia_sectores.get(nombre_puesto, {"color": "#8b0000"})["color"]
-                color_relleno_puesto = simbologia_sectores.get(nombre_puesto, {"fillColor": "#ffffff"})["fillColor"]
+                config_sector = simbologia_sectores.get(nombre_puesto, {"color": "#8b0000", "fillColor": "#ffffff", "opacity": 1.0})
                 
                 folium.CircleMarker(
                     location=coords,
                     radius=8,
                     popup=f"<b>Puesto de Vigilancia:</b><br>{nombre_puesto}",
                     tooltip=f"🛡️ {nombre_puesto}",
-                    color=color_borde_puesto,
+                    color=config_sector["color"],
                     weight=2,
                     fill=True,
-                    fill_color=color_relleno_puesto,
-                    fill_opacity=0.9
+                    fill_color=config_sector["fillColor"],
+                    fill_opacity=config_sector["opacity"] # Sincroniza la opacidad del punto físico con el contorno exterior
                 ).add_to(fg_puestos)
         fg_puestos.add_to(m)
 
@@ -350,16 +356,14 @@ with col_center:
 # PANEL DERECHO (ANÁLISIS EXCLUSIVO DE PÉRDIDA BOSCOSA)
 # ==========================================================
 with col_right:
-    with st.container(height=680, border=True):
+    with st.container(height=720, border=True):
         st.markdown("<h3 style='text-align:center; color:#8b0000; margin-top:0;'>📉 PÉRDIDA BOSCOSA</h3>", unsafe_allow_html=True)
         
         if datos_grafico:
             df_def = pd.DataFrame(list(datos_grafico.items()), columns=["Sector", "Hectáreas"])
             df_def = df_def.sort_values(by="Hectáreas", ascending=False)
             
-            # El gráfico se pintará de acuerdo al color de RELLENO seleccionado en la TOC
             lista_colores_grafico = [simbologia_sectores.get(sec, {"fillColor": "#b22222"})["fillColor"] for sec in df_def["Sector"]]
-            
             st.bar_chart(df_def.set_index("Sector"), y="Hectáreas", color=lista_colores_grafico[0] if lista_colores_grafico else "#b22222", horizontal=True, height=210)
         else:
             st.info("Active capas en el panel izquierdo para poblar el análisis gráfico.")
