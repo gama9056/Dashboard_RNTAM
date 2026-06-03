@@ -5,6 +5,8 @@ import geopandas as gpd
 import pandas as pd
 import glob
 import os
+import zipfile
+import tempfile
 
 # ==========================================================
 # CONFIGURACIÓN GENERAL
@@ -148,7 +150,7 @@ def cargar_capas_geograficas():
         
     return gdf_ambitos, gdf_anp, gdf_za, gdf_pvc_pts
 
-# Carga inicial de datos
+# Carga inicial de datos base
 gdf_ambitos, gdf_anp, gdf_za, gdf_pvc_pts = cargar_capas_geograficas()
 
 # Base de datos analítica estricta
@@ -160,20 +162,51 @@ datos_deforestacion_exclusiva = {
 }
 
 # ==========================================================
-# COLUMNAS PRINCIPALES (1.4 : 1.5 : 1.1) - Espacio óptimo para TOC con doble slider
+# COLUMNAS PRINCIPALES (1.5 : 1.4 : 1.1) - Ajuste de espacio para Contenidos Expandido
 # ==========================================================
-col_left, col_center, col_right = st.columns([1.4, 1.5, 1.1], gap="medium")
+col_left, col_center, col_right = st.columns([1.5, 1.4, 1.1], gap="medium")
 
 # ==========================================================
-# PANEL IZQUIERDO: CONTENIDO (Control Total: Relleno y Borde Independientes)
+# PANEL IZQUIERDO: CONTENIDO (ArcGIS Pro Catalog + TOC Avanzado)
 # ==========================================================
 simbologia_sectores = {}
 pvc_seleccionados = []
+gdf_usuario = None
+nombre_capa_usuario = ""
 
 with col_left:
-    with st.container(height=720, border=True):
+    with st.container(height=780, border=True):
         st.markdown("<h4 style='color: #1e1e1e; margin-top:0; margin-bottom:5px;'>📊 Contents</h4>", unsafe_allow_html=True)
-        st.caption("Drawing Order & Advanced Symbology")
+        st.caption("Drawing Order & Catalog Import")
+        
+        # --- SECCIÓN CATÁLOGO: CARGA DE ARCHIVOS LOCALES ---
+        st.markdown("<div class='toc-header'>📁 Catalog (Import Shapefile .zip)</div>", unsafe_allow_html=True)
+        archivo_subido = st.file_uploader(
+            "Subir archivo comprimido (.zip conteniendo .shp, .shx, .dbf, .prj):",
+            type=["zip"],
+            label_visibility="collapsed"
+        )
+        
+        # Procesamiento en tiempo real del vector cargado por el usuario
+        if archivo_subido is not None:
+            try:
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    path_zip = os.path.join(tmpdir, archivo_subido.name)
+                    with open(path_zip, "wb") as f:
+                        f.write(archivo_subido.getbuffer())
+                    
+                    with zipfile.ZipFile(path_zip, "r") as zip_ref:
+                        zip_ref.extractall(tmpdir)
+                    
+                    archivos_shp = glob.glob(os.path.join(tmpdir, "**", "*.shp"), recursive=True)
+                    if archivos_shp:
+                        gdf_usuario = gpd.read_file(archivos_shp[0]).to_crs("EPSG:4326")
+                        nombre_capa_usuario = os.path.basename(archivos_shp[0]).replace(".shp", "")
+                        st.success(f"Capa '{nombre_capa_usuario}' añadida al catálogo.")
+                    else:
+                        st.error("No se encontró ningún archivo .shp válido dentro del .zip.")
+            except Exception as e:
+                st.error(f"Error al procesar el archivo vectorial: {e}")
         
         # --- CAPAS DE REFERENCIA ---
         st.markdown("<div class='toc-header'>🗺️ Map Layers</div>", unsafe_allow_html=True)
@@ -185,7 +218,21 @@ with col_left:
         ver_za = st.checkbox("🔶 Zona de Amortiguamiento (ZA)", value=True)
         ver_puestos = st.checkbox("📍 Bases de Control (Puntos)", value=True)
         
-        # --- CAPAS OPERATIVAS CON CONTROL TOTAL DE ESTILO INDEPENDIENTE ---
+        # --- CAPA DEL USUARIO (SI EXISTE) ---
+        if gdf_usuario is not None and not gdf_usuario.empty:
+            st.markdown("<div class='toc-header'>📂 User Imported Layers</div>", unsafe_allow_html=True)
+            ver_capa_usuario = st.checkbox(f"🗺️ {nombre_capa_usuario}", value=True)
+            if ver_capa_usuario:
+                with st.expander(f"🎨 Symbology - {nombre_capa_usuario}"):
+                    c1, c2 = st.columns(2)
+                    with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key="f_user")
+                    with c2: stroke_u = st.color_picker("Borde:", "#8e44ad", key="s_user")
+                    o1, o2 = st.columns(2)
+                    with o1: opac_f_u = st.slider("Opac. Relleno:", 0.0, 1.0, 0.4, step=0.1, key="sl_f_user")
+                    with o2: opac_s_u = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key="sl_s_user")
+                    simbologia_sectores[nombre_capa_usuario] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
+        
+        # --- CAPAS OPERATIVAS MAESTRAS ---
         st.markdown("<div class='toc-header'>📂 Mining Areas of Concern (PVC)</div>", unsafe_allow_html=True)
         
         # 1. PVC MALINOWSKI
@@ -241,17 +288,21 @@ with col_left:
                 simbologia_sectores["PVC Azul"] = {"fillColor": fill_a, "color": stroke_a, "fillOpacity": opac_f_a, "opacity": opac_s_a}
 
 # ==========================================================
-# LÓGICA INTERACTIVA DE SIMULTANEIDAD
+# LÓGICA INTERACTIVA DE SIMULTANEIDAD Y ENFOQUE CARTOGRÁFICO
 # ==========================================================
 if pvc_seleccionados and not gdf_ambitos.empty:
     gdf_filtrado = gdf_ambitos[gdf_ambitos["NOM_PVC"].isin(pvc_seleccionados)]
-    bounds = gdf_filtrado.total_bounds
+    # Si el usuario cargó datos y está encendido, unificamos extensiones para el encuadre
+    if gdf_usuario is not None and 'ver_capa_usuario' in locals() and ver_capa_usuario:
+        combined_bounds = pd.concat([gdf_filtrado, gdf_usuario]).total_bounds
+        bounds = combined_bounds
+    else:
+        bounds = gdf_filtrado.total_bounds
+        
     factor = len(pvc_seleccionados)
-    
     ha_afectadas = sum(datos_deforestacion_exclusiva.get(p, 0.0) for p in pvc_seleccionados)
     cant_alertas = max(4, factor * 8)
-    texto_delta = f"{factor} capas activas"
-    
+    texto_delta = f"{factor} sectores en análisis"
     datos_grafico = {p: datos_deforestacion_exclusiva.get(p, 0.0) for p in pvc_seleccionados}
     
     sectores_texto = ", ".join(pvc_seleccionados)
@@ -268,19 +319,26 @@ if pvc_seleccionados and not gdf_ambitos.empty:
     else:
         gdf_pvc_filtrado = gdf_pvc_pts.copy()
 else:
-    gdf_filtrado = gpd.GeoDataFrame(columns["NOM_PVC", "geometry"], crs="EPSG:4326")
+    # Estado base si no hay frentes internos activos en la TOC
+    gdf_filtrado = gpd.GeoDataFrame(columns=["NOM_PVC", "geometry"], crs="EPSG:4326")
     gdf_pvc_filtrado = gpd.GeoDataFrame(columns=["geometry", "NOM_PVC"], crs="EPSG:4326")
     
-    if not gdf_anp.empty: bounds = gdf_anp.total_bounds
-    else: bounds = [-69.8, -13.1, -69.2, -12.5]
+    if gdf_usuario is not None and 'ver_capa_usuario' in locals() and ver_capa_usuario:
+        bounds = gdf_usuario.total_bounds
+        texto_delta = "Capa externa activa"
+    elif not gdf_anp.empty:
+        bounds = gdf_anp.total_bounds
+        texto_delta = "Límites base ANP"
+    else:
+        bounds = [-69.8, -13.1, -69.2, -12.5]
+        texto_delta = "Coordenadas por defecto"
         
     ha_afectadas = 0.0  
     cant_alertas = 0
-    texto_delta = "Sin capas operativas activas"
     datos_grafico = {}
     
     reporte_dinamico = """
-    La vista actual del panel de control no registra capas de ámbitos político-administrativos de patrullaje seleccionadas. Para desplegar el análisis de pérdidas de cobertura boscosa active las casillas correspondientes en el Panel de Contenido situado a la izquierda.
+    La vista actual del panel de control no registra capas de ámbitos político-administrativos de patrullaje seleccionadas. Para desplegar el análisis de pérdidas de cobertura boscosa active las casillas correspondientes en el Panel de Contenido situado a la izquierda o importe un vector local al Catálogo.
     """
 
 # ==========================================================
@@ -305,9 +363,26 @@ with col_center:
     if ver_za and not gdf_za.empty:
         folium.GeoJson(gdf_za, name="🔶 Zona de Amortiguamiento (ZA)", style_function=lambda x: {'fillColor': '#e67e22', 'color': '#d35400', 'weight': 1.5, 'fillOpacity': 0.1}).add_to(m)
 
-    # --- SIMBOLOGÍA AVANZADA CON DOBLE OPACIDAD ---
+    # --- PINTAR LA CAPA COMPLEMENTARIA SUBIDA POR EL USUARIO ---
+    if gdf_usuario is not None and 'ver_capa_usuario' in locals() and ver_capa_usuario:
+        cfg_u = simbologia_sectores.get(nombre_capa_usuario, {"fillColor": "#9b59b6", "color": "#8e44ad", "fillOpacity": 0.4, "opacity": 1.0})
+        folium.GeoJson(
+            gdf_usuario,
+            name=f"📂 {nombre_capa_usuario}",
+            style_function=lambda x, f_c=cfg_u['fillColor'], s_c=cfg_u['color'], f_o=cfg_u['fillOpacity'], s_o=cfg_u['opacity']: {
+                'fillColor': f_c,
+                'color': s_c,
+                'weight': 2.5,
+                'fillOpacity': f_o,
+                'opacity': s_o
+            }
+        ).add_to(m)
+
+    # --- SIMBOLOGÍA AVANZADA FRENTE INTERNO CON CONTROLES INDEPENDIENTES ---
     if not gdf_filtrado.empty:
         for sector, config in simbologia_sectores.items():
+            if sector == nombre_capa_usuario:
+                continue # Evitar procesar duplicado del cargador externo
             gdf_sector = gdf_filtrado[gdf_filtrado["NOM_PVC"] == sector]
             if not gdf_sector.empty:
                 folium.GeoJson(
@@ -344,7 +419,7 @@ with col_center:
                     weight=2,
                     fill=True,
                     fill_color=config_sector["fillColor"],
-                    fill_opacity=config_sector["opacity"] # Sincroniza la opacidad del punto físico con el contorno exterior
+                    fill_opacity=config_sector["opacity"]
                 ).add_to(fg_puestos)
         fg_puestos.add_to(m)
 
@@ -356,7 +431,7 @@ with col_center:
 # PANEL DERECHO (ANÁLISIS EXCLUSIVO DE PÉRDIDA BOSCOSA)
 # ==========================================================
 with col_right:
-    with st.container(height=720, border=True):
+    with st.container(height=780, border=True):
         st.markdown("<h3 style='text-align:center; color:#8b0000; margin-top:0;'>📉 PÉRDIDA BOSCOSA</h3>", unsafe_allow_html=True)
         
         if datos_grafico:
