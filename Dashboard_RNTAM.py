@@ -46,17 +46,9 @@ st.markdown("""
 .stMetric{
     border-radius:10px;
 }
-.toc-header-expander {
-    font-size: 15px;
-    font-weight: bold;
-    color: #1e1e1e;
-}
-.sub-expander {
-    border: none !important;
-    box-shadow: none !important;
-    margin-top: -8px !important;
-    margin-bottom: 4px !important;
-    padding-left: 10px !important;
+/* Optimización de espaciado para expanders anidados */
+.stExpander {
+    margin-bottom: 6px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -152,7 +144,7 @@ with col_left:
         st.caption("Estructura de Desplegables Cartográficos")
         
         # --------------------------------------------------
-        # GRUPO 1: IMPORT EXTERNAL SHAPEFILE (.ZIP) - Desplegable
+        # GRUPO 1: IMPORT EXTERNAL SHAPEFILE (.ZIP) - CERRADO POR DEFECTO
         # --------------------------------------------------
         with st.expander("📁 Import External Shapefile (.zip)", expanded=False):
             archivo_subido = st.file_uploader(
@@ -179,14 +171,13 @@ with col_left:
                 except Exception as e:
                     st.error(f"Error externo: {e}")
             
-            # Control de visualización y simbología externa si existe archivo cargado
+            # Interfaz de la capa externa cuando ya fue procesada de forma segura
             if gdf_usuario is not None and not gdf_usuario.empty:
                 st.markdown("---")
-                # Desactivada por defecto al cargar según la regla general de capas externas
                 ver_capa_usuario = st.checkbox(f"✨ {nombre_capa_usuario}", value=False)
                 if ver_capa_usuario:
-                    with st.container(border=True):
-                        st.markdown(f"**Simbología de {nombre_capa_usuario}**")
+                    # Sub-expander de simbología cerrado por defecto para no saturar al abrir el principal
+                    with st.expander(f"🎨 Simbología - {nombre_capa_usuario}", expanded=False):
                         c1, c2 = st.columns(2)
                         with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key="f_user")
                         with c2: stroke_u = st.color_picker("Borde:", "#8e44ad", key="s_user")
@@ -196,18 +187,18 @@ with col_left:
                         simbologia_sectores[nombre_capa_usuario] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
 
         # --------------------------------------------------
-        # GRUPO 2: MAP LAYERS - Desplegable y Activo por defecto
+        # GRUPO 2: MAP LAYERS - ABIERTO POR DEFECTO
         # --------------------------------------------------
         with st.expander("🗺️ Map Layers", expanded=True):
             capa_satelite = st.checkbox("Google Satellite Baseline", value=True)
         
-        # Clasificación previa de las capas locales escaneadas de GitHub
+        # Clasificación de capas locales escaneadas de GitHub
         lista_todos_reps = sorted(list(diccionario_capas.keys()))
         capas_institucionales = [c for c in lista_todos_reps if "anp" in c.lower() or "za_" in c.lower() or "pvc" in c.lower()]
         capas_ambitos = [c for c in lista_todos_reps if "ambito" in c.lower()]
 
         # --------------------------------------------------
-        # GRUPO 3: CAPAS INSTITUCIONALES - Desplegable y Activas por defecto
+        # GRUPO 3: CAPAS INSTITUCIONALES - ABIERTO POR DEFECTO
         # --------------------------------------------------
         with st.expander("🏛️ Capas Institucionales", expanded=True):
             if not capas_institucionales:
@@ -219,7 +210,6 @@ with col_left:
                     elif "pvc" in nombre_capa.lower(): nombre_limpio = "PVC RNTAM"
                     else: nombre_limpio = nombre_capa.replace("_", " ")
 
-                    # Colores institucionales por defecto
                     color_fill, color_stroke = "#27ae60", "#1e7e34"
                     opac_f_inicial = 0.0
                     
@@ -230,11 +220,12 @@ with col_left:
                         color_fill, color_stroke = "#ffffff", "#8b0000"
                         opac_f_inicial = 0.8
 
-                    # ACTIVADO POR DEFECTO (value=True)
+                    # ACTIVADO POR DEFECTO
                     activo = st.checkbox(f"🔰 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        with st.expander(f"🎨 Symbology - {nombre_limpio}"):
+                        # Sub-expander de simbología cerrado por defecto para una vista más compacta
+                        with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False):
                             c1, c2 = st.columns(2)
                             with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
                             with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
@@ -244,7 +235,7 @@ with col_left:
                             simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
 
         # --------------------------------------------------
-        # GRUPO 4: ÁMBITOS DE CONTROL - Desplegable y DESACTIVADOS por defecto
+        # GRUPO 4: ÁMBITOS DE CONTROL - CERRADO POR DEFECTO
         # --------------------------------------------------
         with st.expander("📂 Ámbitos de Control", expanded=False):
             if not capas_ambitos:
@@ -259,11 +250,12 @@ with col_left:
                     elif "otorongo" in nombre_capa.lower(): color_fill, color_stroke = "#d35400", "#8e2a00"
                     elif "yarinal" in nombre_capa.lower(): color_fill, color_stroke = "#f39c12", "#b77000"
                     
-                    # DESACTIVADO POR DEFECTO (value=False)
+                    # DESACTIVADO POR DEFECTO
                     activo = st.checkbox(f"🔸 {nombre_limpio}", value=False, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        with st.expander(f"🎨 Symbology - {nombre_limpio}"):
+                        # Sub-expander de simbología CERRADO POR DEFECTO para limpieza visual total al abrir el grupo
+                        with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False):
                             c1, c2 = st.columns(2)
                             with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
                             with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
@@ -289,23 +281,18 @@ if gdfs_activos:
     texto_delta = f"{len(gdfs_activos)} capas activas"
     
     datos_grafico = {n.replace("Ambito_de_control_", "PVC "): datos_deforestacion_exclusiva[n] for n in capas_seleccionadas_nombres if n in datos_deforestacion_exclusiva and datos_deforestacion_exclusiva[n] > 0}
-    
-    reporte_dinamico = """
-    El análisis geoespacial enfocado de forma exclusiva en los sectores activos del catálogo muestra los escenarios de control vinculados a actividades de minería aurífera ilegal. La cuantificación detallada en estas zonas específicas revela el impacto directo sobre la cobertura boscosa que altera los ecosistemas protegidos dentro del área de influencia analizada.
-    
-    La información técnica procesada en esta vista proporciona los elementos de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
-    """
 else:
-    bounds = [-69.8, -13.1, -69.2, -12.5] # Coordenadas base de la RNTAM por defecto
-    ha_afectadas = 1241.60  # Valor acumulado estático base de la reserva si nada está seleccionado
+    bounds = [-69.8, -13.1, -69.2, -12.5] 
+    ha_afectadas = 1241.60  
     cant_alertas = 3
     texto_delta = "Filtro Base Institucional"
     datos_grafico = {}
-    reporte_dinamico = """
-    El análisis geoespacial enfocado de forma exclusiva en los sectores activos del catálogo muestra los escenarios de control vinculados a actividades de minería aurífera ilegal. La cuantificación detallada en estas zonas específicas revela el impacto directo sobre la cobertura boscosa que altera los ecosistemas protegidos dentro del área de influencia analizada.
-    
-    La información técnica procesada en esta vista proporciona los elementos de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
-    """
+
+reporte_dinamico = """
+El análisis geoespacial enfocado de forma exclusiva en los sectores activos del catálogo muestra los escenarios de control vinculados a actividades de minería aurífera ilegal. La cuantificación detallada en estas zonas específicas revela el impacto directo sobre la cobertura boscosa que altera los ecosistemas protegidos dentro del área de influencia analizada.
+
+La información técnica procesada en esta vista proporciona los elementos de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
+"""
 
 # ==========================================================
 # PANEL CENTRAL (MÉTRICAS Y VISOR CARTOGRÁFICO DE COMANDO)
@@ -326,13 +313,12 @@ with col_center:
         url_satelite = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
         folium.TileLayer(tiles=url_satelite, attr="Google Maps Satellite", name="Vista Satelital Operativa", overlay=False, control=False).add_to(m)
 
-    # --- RENDERIZADO DINÁMICO DE TODAS LAS CAPAS DEL REPOSITORIO ACTIVAS ---
+    # --- RENDERIZADO DINÁMICO DE TODAS LAS CAPAS ACTIVAS ---
     for nombre_capa in capas_seleccionadas_nombres:
         if nombre_capa in diccionario_capas and nombre_capa in simbologia_sectores:
             gdf_render = diccionario_capas[nombre_capa]
             config = simbologia_sectores[nombre_capa]
             
-            # Tratamiento de capas de puntos (PVC RNTAM / Puntos de Control)
             if not gdf_render.empty and gdf_render.geometry.geom_type.iloc[0] == 'Point':
                 fg_puntos = folium.FeatureGroup(name="Puntos de Control")
                 for idx, row in gdf_render.iterrows():
@@ -350,7 +336,6 @@ with col_center:
                         ).add_to(fg_puntos)
                 fg_puntos.add_to(m)
             else:
-                # Renderizado estándar para Polígonos (Ámbitos, ANP, ZA)
                 folium.GeoJson(
                     gdf_render,
                     name=f"📂 {nombre_capa.replace('_', ' ')}",
@@ -378,7 +363,6 @@ with col_center:
             }
         ).add_to(m)
 
-    # Ajuste automático del lente basándose en los polígonos encendidos
     m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
     st_folium(m, width="100%", height=420, returned_objects=[])
 
@@ -402,4 +386,5 @@ with col_right:
         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
         st.markdown("#### 📋 INFORME SITUACIONAL DEL FRENTE")
         
+        # El cuerpo de texto del reporte se mantiene estructurado en párrafos continuos profesionales
         st.markdown(reporte_dinamico)
