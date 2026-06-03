@@ -126,9 +126,9 @@ datos_deforestacion_exclusiva = {
 }
 
 # ==========================================================
-# COLUMNAS PRINCIPALES (1.5 : 1.4 : 1.1)
+# COLUMNAS PRINCIPALES (1.1 : 1.8 : 1.1)
 # ==========================================================
-col_left, col_center, col_right = st.columns([1.5, 1.4, 1.1], gap="medium")
+col_left, col_center, col_right = st.columns([1.1, 1.8, 1.1], gap="medium")
 
 # ==========================================================
 # PANEL IZQUIERDO: CONTENIDO (Tabla de Contenidos Estructurada)
