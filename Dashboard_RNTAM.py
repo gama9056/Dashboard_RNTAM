@@ -175,8 +175,8 @@ with col_left:
                 st.markdown("---")
                 ver_capa_usuario = st.checkbox(f"✨ {nombre_capa_usuario}", value=False)
                 if ver_capa_usuario:
-                    # Cerrado por defecto (expanded=False) tal como se solicitó
-                    with st.expander(f"🎨 Simbología - {nombre_capa_usuario}", expanded=False):
+                    # Se le asigna un Key único para congelar su estado cerrado
+                    with st.expander(f"🎨 Simbología - {nombre_capa_usuario}", expanded=False, key=f"exp_user_{nombre_capa_usuario}"):
                         c1, c2 = st.columns(2)
                         with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key="f_user")
                         with c2: stroke_u = st.color_picker("Borde:", "#8e44ad", key="s_user")
@@ -191,7 +191,6 @@ with col_left:
         with st.expander("🗺️ Map Layers", expanded=True):
             capa_satelite = st.checkbox("Google Satellite Baseline", value=True)
         
-        # Filtro de nombres según repositorio local
         lista_todos_reps = sorted(list(diccionario_capas.keys()))
         capas_institucionales = [c for c in lista_todos_reps if "anp" in c.lower() or "za_" in c.lower() or "pvc" in c.lower()]
         capas_ambitos = [c for c in lista_todos_reps if "ambito" in c.lower()]
@@ -219,12 +218,11 @@ with col_left:
                         color_fill, color_stroke = "#ffffff", "#8b0000"
                         opac_f_inicial = 0.8
 
-                    # ACTIVADO POR DEFECTO
                     activo = st.checkbox(f"🔰 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        # FIJADO EN EXPANSIÓN OCULTA (expanded=False) AL INICIAR EL VISOR
-                        with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False):
+                        # SOLUCCIÓN: Key única vinculada al bucle para bloquear el estado cerrado por defecto
+                        with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False, key=f"exp_inst_{nombre_capa}"):
                             c1, c2 = st.columns(2)
                             with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
                             with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
@@ -249,12 +247,11 @@ with col_left:
                     elif "otorongo" in nombre_capa.lower(): color_fill, color_stroke = "#d35400", "#8e2a00"
                     elif "yarinal" in nombre_capa.lower(): color_fill, color_stroke = "#f39c12", "#b77000"
                     
-                    # DESACTIVADO POR DEFECTO
                     activo = st.checkbox(f"🔸 {nombre_limpio}", value=False, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        # FIJADO EN EXPANSIÓN OCULTA (expanded=False) AL INICIAR EL VISOR
-                        with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False):
+                        # SOLUCCIÓN: Key única vinculada al bucle para bloquear el estado cerrado por defecto
+                        with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False, key=f"exp_amb_{nombre_capa}"):
                             c1, c2 = st.columns(2)
                             with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
                             with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
