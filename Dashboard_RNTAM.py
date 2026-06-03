@@ -123,10 +123,9 @@ datos_deforestacion_exclusiva = {
 }
 
 # ==========================================================
-# COLUMNAS PRINCIPALES CORREGIDAS (1 : 2 : 1)
+# COLUMNAS PRINCIPALES (1 : 2 : 1)
 # ==========================================================
 col_left, col_center, col_right = st.columns([1, 2, 1], gap="medium")
-
 
 # ==========================================================
 # PANEL IZQUIERDO: CONTENIDO (Tabla de Contenidos Estructurada)
@@ -134,18 +133,19 @@ col_left, col_center, col_right = st.columns([1, 2, 1], gap="medium")
 simbologia_sectores = {}
 capas_seleccionadas_nombres = []
 
-# --- NUEVA LÓGICA: INICIALIZACIÓN DE MEMORIA PARA MÚLTIPLES SHAPEFILES ---
+# Inicialización de la memoria caché para almacenar múltiples shapefiles cargados
 if "capas_usuario" not in st.session_state:
-    st.session_state.capas_usuario = {}  # Almacena pares: {nombre_capa: gdf}
+    st.session_state.capas_usuario = {}
 
-# Variables de control para capas del usuario
-gdfs_usuario_activos = []
+with col_left:
+    with st.container(height=780, border=True):
+        st.markdown("<h4 style='color: #1e1e1e; margin-top:0; margin-bottom:5px;'>📊 Contents</h4>", unsafe_allow_html=True)
+        st.caption("Estructura de Desplegables Cartográficos")
         
-# --------------------------------------------------
+        # --------------------------------------------------
         # GRUPO 1: IMPORT EXTERNAL SHAPEFILE (.ZIP) - MULTI-ARCHIVO
         # --------------------------------------------------
         with st.expander("📁 Import External Shapefile (.zip)", expanded=False):
-            # accept_multiple_files=True permite arrastrar varios .zip a la vez o uno por uno
             archivos_subidos = st.file_uploader(
                 "Subir uno o varios archivos comprimidos adicionales:",
                 type=["zip"],
@@ -169,28 +169,21 @@ gdfs_usuario_activos = []
                                 gdf_temp = sanitizar_geodataframe(gdf_temp)
                                 nombre_capa_temp = os.path.basename(archivos_shp[0]).replace(".shp", "")
                                 
-                                # Guardar en la sesión si no existe para evitar re-lecturas innecesarias
                                 if nombre_capa_temp not in st.session_state.capas_usuario:
                                     st.session_state.capas_usuario[nombre_capa_temp] = gdf_temp
-                                    st.toast(f"Capa '{nombre_capa_temp}' agregada al grupo temporal.", icon="✨")
+                                    st.toast(f"Capa '{nombre_capa_temp}' agregada.", icon="✨")
                             else:
                                 st.error(f"No hay archivo .shp dentro de {archivo.name}")
                     except Exception as e:
                         st.error(f"Error procesando {archivo.name}: {e}")
             
-            # Renderizado dinámico del "Grupo Temporal" de capas cargadas
             if st.session_state.capas_usuario:
                 st.markdown("---")
                 st.caption("📦 Capas Temporales Cargadas")
-                
                 for nombre_capa, gdf_guardado in list(st.session_state.capas_usuario.items()):
-                    # Checkbox independiente por cada shapefile en memoria
                     ver_capa = st.checkbox(f"✨ {nombre_capa}", value=False, key=f"chk_user_{nombre_capa}")
                     if ver_capa:
-                        # Añadimos a la lista operativa para que el mapa lo dibuje
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        
-                        # Cada capa tiene su propia caja de control de simbología cerrada por defecto
                         with st.expander(f"🎨 Simbología - {nombre_capa}", expanded=False, key=f"exp_user_{nombre_capa}"):
                             c1, c2 = st.columns(2)
                             with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key=f"f_user_{nombre_capa}")
@@ -198,19 +191,12 @@ gdfs_usuario_activos = []
                             o1, o2 = st.columns(2)
                             with o1: opac_f_u = st.slider("Opac. Relleno:", 0.0, 1.0, 0.4, step=0.1, key=f"sf_user_{nombre_capa}")
                             with o2: opac_s_u = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_user_{nombre_capa}")
-                            
-                            # Registramos la simbología individualmente
-                            simbologia_sectores[nombre_capa] = {
-                                "fillColor": fill_u, 
-                                "color": stroke_u, 
-                                "fillOpacity": opac_f_u, 
-                                "opacity": opac_s_u
-                            }
+                            simbologia_sectores[nombre_capa] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
+
         # --------------------------------------------------
         # GRUPO 2: CAPAS INSTITUCIONALES - CERRADO POR DEFECTO
         # --------------------------------------------------
         with st.expander("🏛️ Capas Institucionales", expanded=False):
-            # Mapeo y orden explícito solicitado para las capas institucionales
             orden_institucional = [
                 {"patron": "pvc", "limpio": "PVC RNTAM", "fill": "#ffffff", "stroke": "#8b0000", "opac": 0.8},
                 {"patron": "anp", "limpio": "ANP RNTAM", "fill": "#27ae60", "stroke": "#1e7e34", "opac": 0.0},
@@ -220,7 +206,6 @@ gdfs_usuario_activos = []
             lista_todos_reps = list(diccionario_capas.keys())
             capas_encontradas_inst = []
             
-            # Buscamos y ordenamos las capas según el patrón estricto solicitado
             for item in orden_institucional:
                 for nombre_capa in lista_todos_reps:
                     if item["patron"] in nombre_capa.lower() and nombre_capa not in capas_encontradas_inst:
@@ -230,7 +215,6 @@ gdfs_usuario_activos = []
                 st.caption("No se encontraron capas institucionales en la carpeta data/")
             else:
                 for nombre_capa, info in capas_encontradas_inst:
-                    # Desmarcadas por defecto (value=False) según la lista ☐
                     activo = st.checkbox(f"🔰 {info['limpio']}", value=False, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
@@ -247,7 +231,6 @@ gdfs_usuario_activos = []
         # GRUPO 3: ÁMBITOS DE CONTROL - CERRADO POR DEFECTO
         # --------------------------------------------------
         with st.expander("📂 Ámbitos de Control", expanded=False):
-            # Orden estricto solicitado para las subcapas de ámbitos
             orden_ambitos_solicitado = [
                 "otorongo", "azul", "yarinal", "malinowski", 
                 "la_torre", "jorge_chavez", "sandoval", "briolo", "huisene"
@@ -256,7 +239,6 @@ gdfs_usuario_activos = []
             capas_ambitos_encontradas = [c for c in lista_todos_reps if "ambito" in c.lower()]
             capas_ambitos_ordenadas = []
             
-            # Clasificar según el orden de prioridad de la lista
             for patron in orden_ambitos_solicitado:
                 for nombre_capa in capas_ambitos_encontradas:
                     if patron in nombre_capa.lower() and nombre_capa not in capas_ambitos_ordenadas:
@@ -274,7 +256,6 @@ gdfs_usuario_activos = []
                     elif "otorongo" in nombre_capa.lower(): color_fill, color_stroke = "#d35400", "#8e2a00"
                     elif "yarinal" in nombre_capa.lower(): color_fill, color_stroke = "#f39c12", "#b77000"
                     
-                    # Desactivados por defecto (value=False)
                     activo = st.checkbox(f"🔸 {nombre_limpio}", value=False, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
@@ -291,7 +272,6 @@ gdfs_usuario_activos = []
         # GRUPO 4: MAP LAYERS - CERRADO POR DEFECTO
         # --------------------------------------------------
         with st.expander("🗺️ Map Layers", expanded=False):
-            # Cambiado a desmarcado por defecto (value=False) según tu lista
             capa_satelite = st.checkbox("Google Satélite", value=False)
 
 # ==========================================================
@@ -299,7 +279,7 @@ gdfs_usuario_activos = []
 # ==========================================================
 gdfs_activos = [diccionario_capas[n] for n in capas_seleccionadas_nombres if n in diccionario_capas]
 
-# Añadir los GeoDataFrames temporales del usuario que estén activos
+# Unificación de encuadres considerando múltiples capas cargadas por usuario
 for n in capas_seleccionadas_nombres:
     if n in st.session_state.capas_usuario:
         gdfs_activos.append(st.session_state.capas_usuario[n])
@@ -321,6 +301,12 @@ else:
     texto_delta = "Filtro Base Institucional"
     datos_grafico = {}
 
+reporte_dinamico = """
+El análisis geoespacial enfocado de forma exclusiva en los sectores activos del catálogo muestra los escenarios de control vinculados a actividades de minería aurífera ilegal. La cuantificación detallada en estas zonas específicas revela el impacto directo sobre la cobertura boscosa que altera los ecosistemas protegidos dentro del área de influencia analizada.
+
+La información técnica procesada en esta vista proporciona los elementos de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
+"""
+
 # ==========================================================
 # PANEL CENTRAL (MÉTRICAS Y VISOR CARTOGRÁFICO DE COMANDO)
 # ==========================================================
@@ -339,15 +325,13 @@ with col_center:
         url_satelite = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
         folium.TileLayer(tiles=url_satelite, attr="Google Maps Satellite", name="Vista Satelital Operativa", overlay=False, control=False).add_to(m)
     
-    # --- SOLUCCIÓN DE SEGURIDAD DE INICIALIZACIÓN ---
     fg_puntos = folium.FeatureGroup(name="Puntos de Control")
     hay_puntos = False
     
-    # Renderizado dinámico seguro con extracción controlada de simbología dict.get()
+    # Renderizado seguro de capas del repositorio local
     for nombre_capa in capas_seleccionadas_nombres:
         if nombre_capa in diccionario_capas:
             gdf_render = diccionario_capas[nombre_capa]
-            # Uso de .get() seguro para evitar KeyErrors si el usuario manipula velozmente los checkboxes
             config = simbologia_sectores.get(nombre_capa, {"fillColor": "#27ae60", "color": "#1e7e34", "fillOpacity": 0.3, "opacity": 1.0})
             
             if not gdf_render.empty and gdf_render.geometry.geom_type.iloc[0] == 'Point':
@@ -381,7 +365,7 @@ with col_center:
     if hay_puntos:
         fg_puntos.add_to(m)
 
-# --- PINTAR LAS CAPAS COMPLEMENTARIAS SUBIDAS POR EL USUARIO (DINÁMICO) ---
+    # --- PINTAR MÚLTIPLES CAPAS COMPLEMENTARIAS DEL USUARIO (DINÁMICO) ---
     for nombre_capa in capas_seleccionadas_nombres:
         if nombre_capa in st.session_state.capas_usuario:
             gdf_user_render = st.session_state.capas_usuario[nombre_capa]
@@ -398,7 +382,10 @@ with col_center:
                     'opacity': s_o
                 }
             ).add_to(m)
-            
+        
+    m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+    st_folium(m, width="100%", height=420, returned_objects=[])
+
 # ==========================================================
 # PANEL DERECHO (ANÁLISIS EXCLUSIVO DE PÉRDIDA BOSCOSA)
 # ==========================================================
@@ -410,7 +397,6 @@ with col_right:
             df_def = pd.DataFrame(list(datos_grafico.items()), columns=["Sector", "Hectáreas"])
             df_def = df_def.sort_values(by="Hectáreas", ascending=False)
             
-            # Blindaje con .get() y fallback de color para que el gráfico nunca rompa si el diccionario cambia
             lista_colores_grafico = [
                 simbologia_sectores.get(sec.replace("PVC ", "Ambito_de_control_"), {"fillColor": "#b22222"})["fillColor"] 
                 for sec in df_def["Sector"]
