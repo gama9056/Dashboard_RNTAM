@@ -182,57 +182,66 @@ with col_left:
                         simbologia_sectores[nombre_capa_usuario] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
 
         # --------------------------------------------------
-        # GRUPO 2: MAP LAYERS - CERRADO POR DEFECTO CON ÉXITO
-        # --------------------------------------------------
-        with st.expander("🗺️ Map Layers", expanded=False):
-            capa_satelite = st.checkbox("Google Satellite Baseline", value=True)
-        
-        lista_todos_reps = sorted(list(diccionario_capas.keys()))
-        capas_institucionales = [c for c in lista_todos_reps if "anp" in c.lower() or "za_" in c.lower() or "pvc" in c.lower()]
-        capas_ambitos = [c for c in lista_todos_reps if "ambito" in c.lower()]
-
-        # --------------------------------------------------
-        # GRUPO 3: CAPAS INSTITUCIONALES - CERRADO POR DEFECTO
+        # GRUPO 2: CAPAS INSTITUCIONALES - CERRADO POR DEFECTO
         # --------------------------------------------------
         with st.expander("🏛️ Capas Institucionales", expanded=False):
-            if not capas_institucionales:
+            # Mapeo y orden explícito solicitado para las capas institucionales
+            orden_institucional = [
+                {"patron": "pvc", "limpio": "PVC RNTAM", "fill": "#ffffff", "stroke": "#8b0000", "opac": 0.8},
+                {"patron": "anp", "limpio": "ANP RNTAM", "fill": "#27ae60", "stroke": "#1e7e34", "opac": 0.0},
+                {"patron": "za_", "limpio": "ZA RNTAM", "fill": "#e67e22", "stroke": "#d35400", "opac": 0.1}
+            ]
+            
+            lista_todos_reps = list(diccionario_capas.keys())
+            capas_encontradas_inst = []
+            
+            # Buscamos y ordenamos las capas según el patrón estricto solicitado
+            for item in orden_institucional:
+                for nombre_capa in lista_todos_reps:
+                    if item["patron"] in nombre_capa.lower() and nombre_capa not in capas_encontradas_inst:
+                        capas_encontradas_inst.append((nombre_capa, item))
+            
+            if not capas_encontradas_inst:
                 st.caption("No se encontraron capas institucionales en la carpeta data/")
             else:
-                for nombre_capa in capas_institucionales:
-                    if "anp" in nombre_capa.lower(): nombre_limpio = "ANP RNTAM"
-                    elif "za" in nombre_capa.lower(): nombre_limpio = "ZA RNTAM"
-                    elif "pvc" in nombre_capa.lower(): nombre_limpio = "PVC RNTAM"
-                    else: nombre_limpio = nombre_capa.replace("_", " ")
-                    color_fill, color_stroke = "#27ae60", "#1e7e34"
-                    opac_f_inicial = 0.0
-                    
-                    if "za" in nombre_capa.lower():
-                        color_fill, color_stroke = "#e67e22", "#d35400"
-                        opac_f_inicial = 0.1
-                    elif "pvc" in nombre_capa.lower():
-                        color_fill, color_stroke = "#ffffff", "#8b0000"
-                        opac_f_inicial = 0.8
-                    activo = st.checkbox(f"🔰 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
+                for nombre_capa, info in capas_encontradas_inst:
+                    # Desmarcadas por defecto (value=False) según la lista ☐
+                    activo = st.checkbox(f"🔰 {info['limpio']}", value=False, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False, key=f"exp_inst_{nombre_capa}"):
+                        with st.expander(f"🎨 Symbology - {info['limpio']}", expanded=False, key=f"exp_inst_{nombre_capa}"):
                             c1, c2 = st.columns(2)
-                            with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
-                            with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
+                            with c1: fill_c = st.color_picker("Relleno:", info["fill"], key=f"f_{nombre_capa}")
+                            with c2: stroke_c = st.color_picker("Borde:", info["stroke"], key=f"s_{nombre_capa}")
                             o1, o2 = st.columns(2)
-                            with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, opac_f_inicial, step=0.1, key=f"sf_{nombre_capa}")
+                            with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, info["opac"], step=0.1, key=f"sf_{nombre_capa}")
                             with o2: opac_s_c = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
                             simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
 
         # --------------------------------------------------
-        # GRUPO 4: ÁMBITOS DE CONTROL - CERRADO POR DEFECTO
+        # GRUPO 3: ÁMBITOS DE CONTROL - CERRADO POR DEFECTO
         # --------------------------------------------------
         with st.expander("📂 Ámbitos de Control", expanded=False):
-            if not capas_ambitos:
+            # Orden estricto solicitado para las subcapas de ámbitos
+            orden_ambitos_solicitado = [
+                "otorongo", "azul", "yarinal", "malinowski", 
+                "la_torre", "jorge_chavez", "sandoval", "briolo", "huisene"
+            ]
+            
+            capas_ambitos_encontradas = [c for c in lista_todos_reps if "ambito" in c.lower()]
+            capas_ambitos_ordenadas = []
+            
+            # Clasificar según el orden de prioridad de la lista
+            for patron in orden_ambitos_solicitado:
+                for nombre_capa in capas_ambitos_encontradas:
+                    if patron in nombre_capa.lower() and nombre_capa not in capas_ambitos_ordenadas:
+                        capas_ambitos_ordenadas.append(nombre_capa)
+            
+            if not capas_ambitos_ordenadas:
                 st.caption("No se encontraron ámbitos de control en la carpeta data/")
             else:
-                for nombre_capa in capas_ambitos:
-                    nombre_limpio = nombre_capa.replace("Ambito_de_control_", "Ambito de control ").replace("_", " ")
+                for nombre_capa in capas_ambitos_ordenadas:
+                    nombre_limpio = nombre_capa.replace("Ambito_de_control_", "Ámbito de control ").replace("_", " ")
                     
                     color_fill, color_stroke = "#b22222", "#5c0000"
                     if "azul" in nombre_capa.lower(): color_fill, color_stroke = "#2980b9", "#1a4f73"
@@ -240,6 +249,7 @@ with col_left:
                     elif "otorongo" in nombre_capa.lower(): color_fill, color_stroke = "#d35400", "#8e2a00"
                     elif "yarinal" in nombre_capa.lower(): color_fill, color_stroke = "#f39c12", "#b77000"
                     
+                    # Desactivados por defecto (value=False)
                     activo = st.checkbox(f"🔸 {nombre_limpio}", value=False, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
@@ -251,6 +261,13 @@ with col_left:
                             with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, 0.3, step=0.1, key=f"sf_{nombre_capa}")
                             with o2: opac_s_c = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
                             simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
+
+        # --------------------------------------------------
+        # GRUPO 4: MAP LAYERS - CERRADO POR DEFECTO
+        # --------------------------------------------------
+        with st.expander("🗺️ Map Layers", expanded=False):
+            # Cambiado a desmarcado por defecto (value=False) según tu lista
+            capa_satelite = st.checkbox("Google Satélite", value=False)
 
 # ==========================================================
 # LÓGICA DE CONTROL DE ENCUADRE Y CÁLCULO CARTOGRÁFICO
