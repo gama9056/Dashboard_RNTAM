@@ -188,7 +188,7 @@ with col_left:
         # --------------------------------------------------
         # GRUPO 2: MAP LAYERS - ABIERTO POR DEFECTO
         # --------------------------------------------------
-        with st.expander("🗺️ Map Layers", expanded=True):
+        with st.expander("🗺️ Map Layers", expanded=False):
             capa_satelite = st.checkbox("Google Satellite Baseline", value=True)
         
         lista_todos_reps = sorted(list(diccionario_capas.keys()))
@@ -198,7 +198,7 @@ with col_left:
         # --------------------------------------------------
         # GRUPO 3: CAPAS INSTITUCIONALES - ABIERTO POR DEFECTO
         # --------------------------------------------------
-        with st.expander("🏛️ Capas Institucionales", expanded=True):
+        with st.expander("🏛️ Capas Institucionales", expanded=False):
             if not capas_institucionales:
                 st.caption("No se encontraron capas institucionales en la carpeta data/")
             else:
