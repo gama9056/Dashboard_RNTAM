@@ -314,8 +314,9 @@ with col_center:
             gdf_render = diccionario_capas[nombre_capa]
             config = simbologia_sectores[nombre_capa]
             
-            # Tratamiento especial si es una capa de puntos físicos (Bases de Control)
+            # Tratamiento especial si es una capa de puntos físicos (Bases de Control / PVC)
             if not gdf_render.empty and gdf_render.geometry.geom_type.iloc[0] == 'Point':
+                # CORREGIDO: Declaramos y usamos la variable de forma idéntica sin errores de dedo
                 fg_puntos = folium.FeatureGroup(name=nombre_capa.replace("_", " "))
                 for idx, row in gdf_render.iterrows():
                     if row.geometry:
@@ -323,14 +324,14 @@ with col_center:
                         folium.CircleMarker(
                             location=coords,
                             radius=7,
-                            popup=f"<b>Ubicación:</b><br>{nombre_capa}",
+                            popup=f"<b>Ubicación:</b><br>{nombre_capa.replace('_', ' ')}",
                             color=config["color"],
                             weight=2,
                             fill=True,
                             fill_color=config["fillColor"],
                             fill_opacity=config["opacity"]
-                        ).add_to(fg_puestos)
-                fg_puntos.add_to(m)
+                        ).add_to(fg_puntos) # <-- Corregido aquí
+                fg_puntos.add_to(m)         # <-- Corregido aquí
             else:
                 # Renderizado estándar para Polígonos o Líneas (Ámbitos, ANP, ZA)
                 folium.GeoJson(
