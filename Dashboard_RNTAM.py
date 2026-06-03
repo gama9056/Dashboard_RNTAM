@@ -63,7 +63,6 @@ st.markdown("""
 </h2>
 </div>
 """, unsafe_allow_html=True)
-
 st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 
 # ==========================================================
@@ -93,10 +92,8 @@ def escanear_capas_locales(directorio="data"):
     capas_detectadas = {}
     if not os.path.exists(directorio):
         return capas_detectadas
-
     patron_zip = os.path.join(directorio, "*.zip")
     archivos_zip = glob.glob(patron_zip)
-
     for ruta_zip in archivos_zip:
         nombre_base = os.path.basename(ruta_zip).replace(".zip", "")
         try:
@@ -126,7 +123,7 @@ datos_deforestacion_exclusiva = {
 }
 
 # ==========================================================
-# COLUMNAS PRINCIPALES (1 : 2 : 1)
+# COLUMNAS PRINCIPALES CORREGIDAS (1 : 2 : 1)
 # ==========================================================
 col_left, col_center, col_right = st.columns([1, 2, 1], gap="medium")
 
@@ -175,7 +172,6 @@ with col_left:
                 st.markdown("---")
                 ver_capa_usuario = st.checkbox(f"✨ {nombre_capa_usuario}", value=False)
                 if ver_capa_usuario:
-                    # Se le asigna un Key único para congelar su estado cerrado
                     with st.expander(f"🎨 Simbología - {nombre_capa_usuario}", expanded=False, key=f"exp_user_{nombre_capa_usuario}"):
                         c1, c2 = st.columns(2)
                         with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key="f_user")
@@ -186,7 +182,7 @@ with col_left:
                         simbologia_sectores[nombre_capa_usuario] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
 
         # --------------------------------------------------
-        # GRUPO 2: MAP LAYERS - ABIERTO POR DEFECTO
+        # GRUPO 2: MAP LAYERS - CERRADO POR DEFECTO CON ÉXITO
         # --------------------------------------------------
         with st.expander("🗺️ Map Layers", expanded=False):
             capa_satelite = st.checkbox("Google Satellite Baseline", value=True)
@@ -196,7 +192,7 @@ with col_left:
         capas_ambitos = [c for c in lista_todos_reps if "ambito" in c.lower()]
 
         # --------------------------------------------------
-        # GRUPO 3: CAPAS INSTITUCIONALES - ABIERTO POR DEFECTO
+        # GRUPO 3: CAPAS INSTITUCIONALES - CERRADO POR DEFECTO
         # --------------------------------------------------
         with st.expander("🏛️ Capas Institucionales", expanded=False):
             if not capas_institucionales:
@@ -207,7 +203,6 @@ with col_left:
                     elif "za" in nombre_capa.lower(): nombre_limpio = "ZA RNTAM"
                     elif "pvc" in nombre_capa.lower(): nombre_limpio = "PVC RNTAM"
                     else: nombre_limpio = nombre_capa.replace("_", " ")
-
                     color_fill, color_stroke = "#27ae60", "#1e7e34"
                     opac_f_inicial = 0.0
                     
@@ -217,11 +212,9 @@ with col_left:
                     elif "pvc" in nombre_capa.lower():
                         color_fill, color_stroke = "#ffffff", "#8b0000"
                         opac_f_inicial = 0.8
-
                     activo = st.checkbox(f"🔰 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        # SOLUCCIÓN: Key única vinculada al bucle para bloquear el estado cerrado por defecto
                         with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False, key=f"exp_inst_{nombre_capa}"):
                             c1, c2 = st.columns(2)
                             with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
@@ -250,7 +243,6 @@ with col_left:
                     activo = st.checkbox(f"🔸 {nombre_limpio}", value=False, key=f"chk_{nombre_capa}")
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        # SOLUCCIÓN: Key única vinculada al bucle para bloquear el estado cerrado por defecto
                         with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False, key=f"exp_amb_{nombre_capa}"):
                             c1, c2 = st.columns(2)
                             with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
@@ -298,26 +290,26 @@ with col_center:
     m1, m2 = st.columns(2)
     with m1: st.metric(label="🚨 Área Deforestada Seleccionada", value=f"{ha_afectadas:,.2f} Ha", delta=texto_delta, delta_color="inverse")
     with m2: st.metric(label="📡 Alertas Críticas Activas", value=str(cant_alertas), delta="Focos Detectados en Capa", delta_color="inverse")
-
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<h3 style='color:#163b16; margin:0 0 10px 0;'>🗺️ VISOR DE COMANDO Y CONTROL</h3>", unsafe_allow_html=True)
-
+    
     centro_mapa = [(bounds[1] + bounds[3]) / 2, (bounds[0] + bounds[2]) / 2]
     m = folium.Map(location=centro_mapa, zoom_start=11, control_scale=True)
     
     if capa_satelite:
         url_satelite = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
         folium.TileLayer(tiles=url_satelite, attr="Google Maps Satellite", name="Vista Satelital Operativa", overlay=False, control=False).add_to(m)
-
-    # --- SOLUCIÓN DE BUG DE INICIALIZACIÓN DE ENTORNO DE PUNTOS ---
+    
+    # --- SOLUCCIÓN DE SEGURIDAD DE INICIALIZACIÓN ---
     fg_puntos = folium.FeatureGroup(name="Puntos de Control")
     hay_puntos = False
-
-    # Renderizado dinámico seguro
+    
+    # Renderizado dinámico seguro con extracción controlada de simbología dict.get()
     for nombre_capa in capas_seleccionadas_nombres:
-        if nombre_capa in diccionario_capas and nombre_capa in simbologia_sectores:
+        if nombre_capa in diccionario_capas:
             gdf_render = diccionario_capas[nombre_capa]
-            config = simbologia_sectores[nombre_capa]
+            # Uso de .get() seguro para evitar KeyErrors si el usuario manipula velozmente los checkboxes
+            config = simbologia_sectores.get(nombre_capa, {"fillColor": "#27ae60", "color": "#1e7e34", "fillOpacity": 0.3, "opacity": 1.0})
             
             if not gdf_render.empty and gdf_render.geometry.geom_type.iloc[0] == 'Point':
                 hay_puntos = True
@@ -328,11 +320,11 @@ with col_center:
                             location=coords,
                             radius=7,
                             popup=f"<b>Ubicación:</b><br>{nombre_capa.replace('_', ' ')}",
-                            color=config["color"],
+                            color=config.get("color", "#1e7e34"),
                             weight=2,
                             fill=True,
-                            fill_color=config["fillColor"],
-                            fill_opacity=config["opacity"]
+                            fill_color=config.get("fillColor", "#27ae60"),
+                            fill_opacity=config.get("opacity", 1.0)
                         ).add_to(fg_puntos)
             else:
                 folium.GeoJson(
@@ -346,8 +338,7 @@ with col_center:
                         'opacity': s_o
                     }
                 ).add_to(m)
-
-    # Añadir los puntos al mapa de Folium únicamente si fueron procesados
+                
     if hay_puntos:
         fg_puntos.add_to(m)
 
@@ -365,7 +356,7 @@ with col_center:
                 'opacity': s_o
             }
         ).add_to(m)
-
+        
     m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
     st_folium(m, width="100%", height=420, returned_objects=[])
 
@@ -380,7 +371,11 @@ with col_right:
             df_def = pd.DataFrame(list(datos_grafico.items()), columns=["Sector", "Hectáreas"])
             df_def = df_def.sort_values(by="Hectáreas", ascending=False)
             
-            lista_colores_grafico = [simbologia_sectores.get(sec.replace("PVC ", "Ambito_de_control_"), {"fillColor": "#b22222"})["fillColor"] for sec in df_def["Sector"]]
+            # Blindaje con .get() y fallback de color para que el gráfico nunca rompa si el diccionario cambia
+            lista_colores_grafico = [
+                simbologia_sectores.get(sec.replace("PVC ", "Ambito_de_control_"), {"fillColor": "#b22222"})["fillColor"] 
+                for sec in df_def["Sector"]
+            ]
             st.bar_chart(df_def.set_index("Sector"), y="Hectáreas", color=lista_colores_grafico[0] if lista_colores_grafico else "#b22222", horizontal=True, height=210)
         else:
             st.info("Active ámbitos en el panel izquierdo para poblar las estadísticas de pérdida.")
