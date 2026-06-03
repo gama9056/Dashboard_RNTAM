@@ -46,27 +46,17 @@ st.markdown("""
 .stMetric{
     border-radius:10px;
 }
-.toc-header {
-    font-size: 14px;
+.toc-header-expander {
+    font-size: 15px;
     font-weight: bold;
-    color: #4A4A4A;
-    margin-top: 12px;
-    margin-bottom: 6px;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 3px;
+    color: #1e1e1e;
 }
-.group-container {
-    background-color: #fcfcfc;
-    border: 1px solid #e6e6e6;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 10px;
-}
-.stExpander {
+.sub-expander {
     border: none !important;
     box-shadow: none !important;
-    margin-top: -5px !important;
-    margin-bottom: 5px !important;
+    margin-top: -8px !important;
+    margin-bottom: 4px !important;
+    padding-left: 10px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -149,7 +139,7 @@ datos_deforestacion_exclusiva = {
 col_left, col_center, col_right = st.columns([1.5, 1.4, 1.1], gap="medium")
 
 # ==========================================================
-# PANEL IZQUIERDO: CONTENIDO (Tabla de Contenidos por Grupos)
+# PANEL IZQUIERDO: CONTENIDO (Tabla de Contenidos Estructurada)
 # ==========================================================
 simbologia_sectores = {}
 capas_seleccionadas_nombres = []
@@ -159,123 +149,131 @@ nombre_capa_usuario = ""
 with col_left:
     with st.container(height=780, border=True):
         st.markdown("<h4 style='color: #1e1e1e; margin-top:0; margin-bottom:5px;'>📊 Contents</h4>", unsafe_allow_html=True)
-        st.caption("Organización por Grupos Cartográficos Estructurados")
+        st.caption("Estructura de Desplegables Cartográficos")
         
-        # --- 1. SECCIÓN CATÁLOGO EXTERNO (Subida Manual) ---
-        st.markdown("<div class='toc-header'>📁 Import External Shapefile (.zip)</div>", unsafe_allow_html=True)
-        archivo_subido = st.file_uploader(
-            "Subir archivo comprimido adicional:",
-            type=["zip"],
-            label_visibility="collapsed"
-        )
-        if archivo_subido is not None:
-            try:
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    path_zip = os.path.join(tmpdir, archivo_subido.name)
-                    with open(path_zip, "wb") as f:
-                        f.write(archivo_subido.getbuffer())
-                    with zipfile.ZipFile(path_zip, "r") as zip_ref:
-                        zip_ref.extractall(tmpdir)
-                    archivos_shp = glob.glob(os.path.join(tmpdir, "**", "*.shp"), recursive=True)
-                    if archivos_shp:
-                        gdf_usuario = gpd.read_file(archivos_shp[0]).to_crs("EPSG:4326")
-                        gdf_usuario = sanitizar_geodataframe(gdf_usuario)
-                        nombre_capa_usuario = os.path.basename(archivos_shp[0]).replace(".shp", "")
-                        st.success(f"Capa '{nombre_capa_usuario}' cargada.")
-                    else:
-                        st.error("No hay archivo .shp dentro del .zip.")
-            except Exception as e:
-                st.error(f"Error externo: {e}")
-        
-        # --- 2. CAPAS BASE DEL MAPA ---
-        st.markdown("<div class='toc-header'>🗺️ Map Layers</div>", unsafe_allow_html=True)
-        capa_satelite = st.checkbox("Google Satellite Baseline", value=True)
-        
-        # --- UI DE LA CAPA EXTERNA DEL USUARIO ---
-        if gdf_usuario is not None and not gdf_usuario.empty:
-            st.markdown("<div class='toc-header'>📂 User Uploaded Layer</div>", unsafe_allow_html=True)
-            ver_capa_usuario = st.checkbox(f"✨ {nombre_capa_usuario}", value=True)
-            if ver_capa_usuario:
-                with st.expander(f"🎨 Symbology - {nombre_capa_usuario}"):
-                    c1, c2 = st.columns(2)
-                    with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key="f_user")
-                    with c2: stroke_u = st.color_picker("Borde:", "#8e44ad", key="s_user")
-                    o1, o2 = st.columns(2)
-                    with o1: opac_f_u = st.slider("Opac. Relleno:", 0.0, 1.0, 0.4, step=0.1, key="sl_f_user")
-                    with o2: opac_s_u = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key="sl_s_user")
-                    simbologia_sectores[nombre_capa_usuario] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
+        # --------------------------------------------------
+        # GRUPO 1: IMPORT EXTERNAL SHAPEFILE (.ZIP) - Desplegable
+        # --------------------------------------------------
+        with st.expander("📁 Import External Shapefile (.zip)", expanded=False):
+            archivo_subido = st.file_uploader(
+                "Subir archivo comprimido adicional:",
+                type=["zip"],
+                key="uploader_manual"
+            )
+            if archivo_subido is not None:
+                try:
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        path_zip = os.path.join(tmpdir, archivo_subido.name)
+                        with open(path_zip, "wb") as f:
+                            f.write(archivo_subido.getbuffer())
+                        with zipfile.ZipFile(path_zip, "r") as zip_ref:
+                            zip_ref.extractall(tmpdir)
+                        archivos_shp = glob.glob(os.path.join(tmpdir, "**", "*.shp"), recursive=True)
+                        if archivos_shp:
+                            gdf_usuario = gpd.read_file(archivos_shp[0]).to_crs("EPSG:4326")
+                            gdf_usuario = sanitizar_geodataframe(gdf_usuario)
+                            nombre_capa_usuario = os.path.basename(archivos_shp[0]).replace(".shp", "")
+                            st.success(f"Capa '{nombre_capa_usuario}' cargada.")
+                        else:
+                            st.error("No hay archivo .shp dentro del .zip.")
+                except Exception as e:
+                    st.error(f"Error externo: {e}")
+            
+            # Control de visualización y simbología externa si existe archivo cargado
+            if gdf_usuario is not None and not gdf_usuario.empty:
+                st.markdown("---")
+                # Desactivada por defecto al cargar según la regla general de capas externas
+                ver_capa_usuario = st.checkbox(f"✨ {nombre_capa_usuario}", value=False)
+                if ver_capa_usuario:
+                    with st.container(border=True):
+                        st.markdown(f"**Simbología de {nombre_capa_usuario}**")
+                        c1, c2 = st.columns(2)
+                        with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key="f_user")
+                        with c2: stroke_u = st.color_picker("Borde:", "#8e44ad", key="s_user")
+                        o1, o2 = st.columns(2)
+                        with o1: opac_f_u = st.slider("Opac. Relleno:", 0.0, 1.0, 0.4, step=0.1, key="sl_f_user")
+                        with o2: opac_s_u = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key="sl_s_user")
+                        simbologia_sectores[nombre_capa_usuario] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
 
-        # --- 3. SEPARACIÓN Y FILTRADO POR GRUPOS LOGÍSTICOS ---
+        # --------------------------------------------------
+        # GRUPO 2: MAP LAYERS - Desplegable y Activo por defecto
+        # --------------------------------------------------
+        with st.expander("🗺️ Map Layers", expanded=True):
+            capa_satelite = st.checkbox("Google Satellite Baseline", value=True)
+        
+        # Clasificación previa de las capas locales escaneadas de GitHub
         lista_todos_reps = sorted(list(diccionario_capas.keys()))
-        
-        # Clasificamos las capas según su nombre para armar los grupos solicitados
-        capas_ambitos = [c for c in lista_todos_reps if "ambito" in c.lower()]
         capas_institucionales = [c for c in lista_todos_reps if "anp" in c.lower() or "za_" in c.lower() or "pvc" in c.lower()]
+        capas_ambitos = [c for c in lista_todos_reps if "ambito" in c.lower()]
 
-        # ---- GRUPO 1: ÁMBITOS DE CONTROL (Los 9 Sectores) ----
-        st.markdown("<div class='toc-header'>📂 Ámbitos de Control</div>", unsafe_allow_html=True)
-        if not capas_ambitos:
-            st.caption("No se encontraron ámbitos de control en data/")
-        else:
-            for nombre_capa in capas_ambitos:
-                nombre_limpio = nombre_capa.replace("Ambito_de_control_", "Ambito de control ").replace("_", " ")
-                
-                # Definición de colores por defecto inteligentes para los ámbitos
-                color_fill, color_stroke = "#b22222", "#5c0000" # Rojo genérico por defecto
-                if "azul" in nombre_capa.lower(): color_fill, color_stroke = "#2980b9", "#1a4f73"
-                elif "malinowski" in nombre_capa.lower(): color_fill, color_stroke = "#e74c3c", "#781e1e"
-                elif "otorongo" in nombre_capa.lower(): color_fill, color_stroke = "#d35400", "#8e2a00"
-                elif "yarinal" in nombre_capa.lower(): color_fill, color_stroke = "#f39c12", "#b77000"
-                
-                activo = st.checkbox(f"🔸 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
-                if activo:
-                    capas_seleccionadas_nombres.append(nombre_capa)
-                    with st.expander(f"🎨 Symbology - {nombre_limpio}"):
-                        c1, c2 = st.columns(2)
-                        with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
-                        with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
-                        o1, o2 = st.columns(2)
-                        with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, 0.3, step=0.1, key=f"sf_{nombre_capa}")
-                        with o2: opac_s_c = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
-                        simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
+        # --------------------------------------------------
+        # GRUPO 3: CAPAS INSTITUCIONALES - Desplegable y Activas por defecto
+        # --------------------------------------------------
+        with st.expander("🏛️ Capas Institucionales", expanded=True):
+            if not capas_institucionales:
+                st.caption("No se encontraron capas institucionales en la carpeta data/")
+            else:
+                for nombre_capa in capas_institucionales:
+                    if "anp" in nombre_capa.lower(): nombre_limpio = "ANP RNTAM"
+                    elif "za" in nombre_capa.lower(): nombre_limpio = "ZA RNTAM"
+                    elif "pvc" in nombre_capa.lower(): nombre_limpio = "PVC RNTAM"
+                    else: nombre_limpio = nombre_capa.replace("_", " ")
 
-        # ---- GRUPO 2: GESTIÓN INSTITUCIONAL (ANP, ZA, PVC) ----
-        st.markdown("<div class='toc-header'>🏛️ Capas Institucionales</div>", unsafe_allow_html=True)
-        if not capas_institucionales:
-            st.caption("No se encontraron capas institucionales en data/")
-        else:
-            for nombre_capa in capas_institucionales:
-                # Renombrar de forma limpia para visualización de la UI
-                if "anp" in nombre_capa.lower(): nombre_limpio = "ANP RNTAM"
-                elif "za" in nombre_capa.lower(): nombre_limpio = "ZA RNTAM"
-                elif "pvc" in nombre_capa.lower(): nombre_limpio = "PVC RNTAM"
-                else: nombre_limpio = nombre_capa.replace("_", " ")
+                    # Colores institucionales por defecto
+                    color_fill, color_stroke = "#27ae60", "#1e7e34"
+                    opac_f_inicial = 0.0
+                    
+                    if "za" in nombre_capa.lower():
+                        color_fill, color_stroke = "#e67e22", "#d35400"
+                        opac_f_inicial = 0.1
+                    elif "pvc" in nombre_capa.lower():
+                        color_fill, color_stroke = "#ffffff", "#8b0000"
+                        opac_f_inicial = 0.8
 
-                # Colores institucionales oficiales
-                color_fill, color_stroke = "#27ae60", "#1e7e34" # Verde para ANP
-                opac_f_inicial = 0.0  # ANP transparente al centro por defecto
-                
-                if "za" in nombre_capa.lower():
-                    color_fill, color_stroke = "#e67e22", "#d35400" # Anaranjado para ZA
-                    opac_f_inicial = 0.1
-                elif "pvc" in nombre_capa.lower():
-                    color_fill, color_stroke = "#ffffff", "#8b0000" # Blanco con borde rojo oscuro para puntos
-                    opac_f_inicial = 0.8
+                    # ACTIVADO POR DEFECTO (value=True)
+                    activo = st.checkbox(f"🔰 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
+                    if activo:
+                        capas_seleccionadas_nombres.append(nombre_capa)
+                        with st.expander(f"🎨 Symbology - {nombre_limpio}"):
+                            c1, c2 = st.columns(2)
+                            with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
+                            with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
+                            o1, o2 = st.columns(2)
+                            with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, opac_f_inicial, step=0.1, key=f"sf_{nombre_capa}")
+                            with o2: opac_s_c = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
+                            simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
 
-                activo = st.checkbox(f"🔰 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
-                if activo:
-                    capas_seleccionadas_nombres.append(nombre_capa)
-                    with st.expander(f"🎨 Symbology - {nombre_limpio}"):
-                        c1, c2 = st.columns(2)
-                        with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
-                        with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
-                        o1, o2 = st.columns(2)
-                        with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, opac_f_inicial, step=0.1, key=f"sf_{nombre_capa}")
-                        with o2: opac_s_c = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
-                        simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
+        # --------------------------------------------------
+        # GRUPO 4: ÁMBITOS DE CONTROL - Desplegable y DESACTIVADOS por defecto
+        # --------------------------------------------------
+        with st.expander("📂 Ámbitos de Control", expanded=False):
+            if not capas_ambitos:
+                st.caption("No se encontraron ámbitos de control en la carpeta data/")
+            else:
+                for nombre_capa in capas_ambitos:
+                    nombre_limpio = nombre_capa.replace("Ambito_de_control_", "Ambito de control ").replace("_", " ")
+                    
+                    color_fill, color_stroke = "#b22222", "#5c0000"
+                    if "azul" in nombre_capa.lower(): color_fill, color_stroke = "#2980b9", "#1a4f73"
+                    elif "malinowski" in nombre_capa.lower(): color_fill, color_stroke = "#e74c3c", "#781e1e"
+                    elif "otorongo" in nombre_capa.lower(): color_fill, color_stroke = "#d35400", "#8e2a00"
+                    elif "yarinal" in nombre_capa.lower(): color_fill, color_stroke = "#f39c12", "#b77000"
+                    
+                    # DESACTIVADO POR DEFECTO (value=False)
+                    activo = st.checkbox(f"🔸 {nombre_limpio}", value=False, key=f"chk_{nombre_capa}")
+                    if activo:
+                        capas_seleccionadas_nombres.append(nombre_capa)
+                        with st.expander(f"🎨 Symbology - {nombre_limpio}"):
+                            c1, c2 = st.columns(2)
+                            with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
+                            with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
+                            o1, o2 = st.columns(2)
+                            with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, 0.3, step=0.1, key=f"sf_{nombre_capa}")
+                            with o2: opac_s_c = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
+                            simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
 
 # ==========================================================
-# LÓGICA DE CONTROL DE ENCUADRE Y CALCULO CARTOGRÁFICO
+# LÓGICA DE CONTROL DE ENCUADRE Y CÁLCULO CARTOGRÁFICO
 # ==========================================================
 gdfs_activos = [diccionario_capas[n] for n in capas_seleccionadas_nombres if n in diccionario_capas]
 if gdf_usuario is not None and 'ver_capa_usuario' in locals() and ver_capa_usuario:
@@ -298,12 +296,16 @@ if gdfs_activos:
     La información técnica procesada en esta vista proporciona los elementos de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
     """
 else:
-    bounds = [-69.8, -13.1, -69.2, -12.5] # Coordenadas base RNTAM
-    ha_afectadas = 0.0
-    cant_alertas = 0
-    texto_delta = "Sin capas activas"
+    bounds = [-69.8, -13.1, -69.2, -12.5] # Coordenadas base de la RNTAM por defecto
+    ha_afectadas = 1241.60  # Valor acumulado estático base de la reserva si nada está seleccionado
+    cant_alertas = 3
+    texto_delta = "Filtro Base Institucional"
     datos_grafico = {}
-    reporte_dinamico = "La vista actual del panel de control no registra capas seleccionadas. Por favor actívelas en la Tabla de Contenidos (Contents) para desplegar el visor cartográfico."
+    reporte_dinamico = """
+    El análisis geoespacial enfocado de forma exclusiva en los sectores activos del catálogo muestra los escenarios de control vinculados a actividades de minería aurífera ilegal. La cuantificación detallada en estas zonas específicas revela el impacto directo sobre la cobertura boscosa que altera los ecosistemas protegidos dentro del área de influencia analizada.
+    
+    La información técnica procesada en esta vista proporciona los elementos de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
+    """
 
 # ==========================================================
 # PANEL CENTRAL (MÉTRICAS Y VISOR CARTOGRÁFICO DE COMANDO)
@@ -374,9 +376,9 @@ with col_center:
                 'fillOpacity': f_o,
                 'opacity': s_o
             }
-                ).add_to(m)
+        ).add_to(m)
 
-    # Ajuste automático del lente de la cámara web basándose en los polígonos encendidos
+    # Ajuste automático del lente basándose en los polígonos encendidos
     m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
     st_folium(m, width="100%", height=420, returned_objects=[])
 
@@ -394,7 +396,7 @@ with col_right:
             lista_colores_grafico = [simbologia_sectores.get(sec.replace("PVC ", "Ambito_de_control_"), {"fillColor": "#b22222"})["fillColor"] for sec in df_def["Sector"]]
             st.bar_chart(df_def.set_index("Sector"), y="Hectáreas", color=lista_colores_grafico[0] if lista_colores_grafico else "#b22222", horizontal=True, height=210)
         else:
-            st.info("Active capas en el panel izquierdo para poblar el análisis gráfico.")
+            st.info("Active ámbitos en el panel izquierdo para poblar las estadísticas de pérdida.")
             st.markdown("<div style='height:165px;'></div>", unsafe_allow_html=True)
         
         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
