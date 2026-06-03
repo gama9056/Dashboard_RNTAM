@@ -7,8 +7,6 @@ import glob
 import os
 import zipfile
 import tempfile
-# IMPORTANTE: Requerimos esta librería para habilitar el arrastre físico con tirador (drag handle)
-from streamlit_sortables import sort_items
 
 # ==========================================================
 # CONFIGURACIÓN GENERAL
@@ -278,24 +276,31 @@ with col_left:
             capa_satelite = st.checkbox("Google Satélite", value=False)
 
         # --------------------------------------------------
-        # ✨ NUEVO GRUPO 5: 🔄 DRAWING ORDER (INTERACTIVO AL FINAL DE CONTENTS)
+        # ✨ GRUPO 5: 🔄 DRAWING ORDER (NATIVO, SIN LIBRERÍAS EXTERNAS)
         # --------------------------------------------------
         st.markdown("<br>", unsafe_allow_html=True)
         with st.expander("🔄 Drawing Order (Capas Activas)", expanded=True):
+            capas_ordenadas_para_dibujo = []
             if capas_seleccionadas_nombres:
-                st.caption("Drag ☰ to change overlay order (Top items display in front):")
+                st.caption("Asigna la prioridad de dibujo (Números más altos van EN FRENTE/ARRIBA):")
                 
-                # Mapeamos los nombres internos a los nombres limpios legibles por el usuario
                 mapa_nombres_limpios = {obtener_nombre_operativo(n): n for n in capas_seleccionadas_nombres}
-                lista_etiquetas = list(mapa_nombres_limpios.keys())
+                prioridades = {}
                 
-                # Renderiza la lista con el tirador nativo de arrastre (drag-and-drop handle)
-                lista_reordenada_etiquetas = sort_items(lista_etiquetas, direction="vertical", key="sortable_layers")
+                # Creamos selectores numéricos con el grip icon simulado (⋮⋮) para cada capa activa
+                for idx, etiqueta in enumerate(mapa_nombres_limpios.keys()):
+                    # El valor por defecto se incrementa para simular el orden secuencial natural
+                    prioridades[etiqueta] = st.number_input(
+                        f"⋮⋮ {etiqueta}", 
+                        min_value=1, 
+                        max_value=20, 
+                        value=idx + 1, 
+                        key=f"prioridad_{mapa_nombres_limpios[etiqueta]}"
+                    )
                 
-                # Folium pinta de abajo hacia arriba. Si el usuario deja un ítem ARRIBA de la lista, 
-                # significa que quiere verlo EN FRENTE. Por ende, invertimos la lista para el bucle de Folium.
-                capas_ordenadas_para_dibujo = [mapa_nombres_limpios[lbl] for lbl in lista_reordenada_etiquetas if lbl in mapa_nombres_limpios]
-                capas_ordenadas_para_dibujo.reverse()
+                # Ordenamos las capas basándonos en la prioridad numérica ingresada por el usuario
+                etiquetas_ordenadas = sorted(prioridades, key=prioridades.get)
+                capas_ordenadas_para_dibujo = [mapa_nombres_limpios[lbl] for lbl in etiquetas_ordenadas if lbl in mapa_nombres_limpios]
             else:
                 st.caption("No hay capas seleccionadas en Contents para ordenar.")
                 capas_ordenadas_para_dibujo = []
@@ -349,13 +354,13 @@ with col_center:
         url_satelite = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
         folium.TileLayer(tiles=url_satelite, attr="Google Maps Satellite", name="Vista Satelital Operativa", overlay=False, control=False).add_to(m)
     
+    # CORRECCIÓN DE BUG: Definición correcta del Feature Group para los Puntos de Control
     fg_puntos = folium.FeatureGroup(name="Puntos de Control")
     hay_puntos = False
     
-    # Si no hay un orden definido por el usuario (ninguna capa activa), usamos el orden por defecto
     orden_final_renderizado = capas_ordenadas_para_dibujo if capas_seleccionadas_nombres else capas_seleccionadas_nombres
 
-    # Renderizado iterativo basado estrictamente en la jerarquía dinámica del panel izquierdo
+    # Renderizado secuencial basado en el orden prioritario del usuario
     for nombre_capa in orden_final_renderizado:
         if nombre_capa in diccionario_capas:
             gdf_render = diccionario_capas[nombre_capa]
