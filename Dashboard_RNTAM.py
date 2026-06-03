@@ -50,15 +50,22 @@ st.markdown("""
     font-size: 14px;
     font-weight: bold;
     color: #4A4A4A;
-    margin-top: 10px;
-    margin-bottom: 5px;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 2px;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 3px;
+}
+.group-container {
+    background-color: #fcfcfc;
+    border: 1px solid #e6e6e6;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
 }
 .stExpander {
     border: none !important;
     box-shadow: none !important;
-    margin-top: -10px !important;
+    margin-top: -5px !important;
     margin-bottom: 5px !important;
 }
 </style>
@@ -78,22 +85,17 @@ st.markdown("""
 st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 
 # ==========================================================
-# 🗺️ LÓGICA DE LIMPIEZA TOTAL PARA EVITAR ERRORES DE FECHAS/TIMESTAMPS
+# 🗺️ LÓGICA DE LIMPIEZA TOTAL PARA EVITAR ERRORES DE FECHAS
 # ==========================================================
 def sanitizar_geodataframe(gdf):
-    """Elimina o convierte a texto cualquier columna temporal o compleja que Folium no pueda serializar a JSON"""
+    """Elimina o convierte a texto cualquier columna temporal que Folium no pueda serializar"""
     if gdf is None or gdf.empty:
         return gdf
-    
-    # 1. Convertir columnas de tiempo nativas a strings transparentes
     for col in gdf.select_dtypes(include=['datetime64', 'timedelta64', 'datetimetz']).columns:
         gdf[col] = gdf[col].astype(str)
-        
-    # 2. Forzar conversión a texto de cualquier metadato sospechoso de almacenar fechas (ej. 'za_felea')
     for col in gdf.columns:
         if col.lower() in ['fecha', 'date', 'felea', 'time', 'timestamp'] or gdf[col].dtype == 'object':
             try:
-                # Comprobamos si tiene datos tipo Timestamp ocultos en columnas genéricas
                 if any(isinstance(val, (pd.Timestamp, pd.Timedelta)) for val in gdf[col].dropna()):
                     gdf[col] = gdf[col].astype(str)
             except:
@@ -105,38 +107,40 @@ def sanitizar_geodataframe(gdf):
 # ==========================================================
 @st.cache_data
 def escanear_capas_locales(directorio="data"):
-    """Busca dinámicamente todos los archivos .zip dentro de la carpeta data de tu repositorio"""
+    """Busca dinámicamente todos los archivos .zip dentro de la carpeta data"""
     capas_detectadas = {}
     if not os.path.exists(directorio):
         return capas_detectadas
 
-    # Escanear todos los .zip en el directorio data/
     patron_zip = os.path.join(directorio, "*.zip")
     archivos_zip = glob.glob(patron_zip)
 
     for ruta_zip in archivos_zip:
         nombre_base = os.path.basename(ruta_zip).replace(".zip", "")
         try:
-            # Leer el shapefile directo del comprimido usando el prefijo zip://
             gdf = gpd.read_file(f"zip://{ruta_zip}").to_crs("EPSG:4326")
             if not gdf.empty:
                 gdf = sanitizar_geodataframe(gdf)
                 capas_detectadas[nombre_base] = gdf
-        except Exception as e:
-            # Si un archivo zip no es un shapefile válido o está vacío, se ignora de forma segura
+        except:
             pass
             
     return capas_detectadas
 
-# Carga automática del inventario de mapas de tu repositorio de GitHub
+# Carga e inventariado automático
 diccionario_capas = escanear_capas_locales()
 
-# Base de datos analítica estricta para frentes conocidos
+# Base analítica de deforestación por hectáreas
 datos_deforestacion_exclusiva = {
     "Ambito_de_control_Malinowski": 524.30,
     "Ambito_de_control_Otorongo": 341.20,
     "Ambito_de_control_Yarinal": 215.60,
-    "Ambito_de_control_Azul": 160.50
+    "Ambito_de_control_Azul": 160.50,
+    "Ambito_de_control_Jorge_Chavez": 0.00,
+    "Ambito_de_control_Huisene": 0.00,
+    "Ambito_de_control_Briolo": 0.00,
+    "Ambito_de_control_La_Torre": 0.00,
+    "Ambito_de_control_Sandoval": 0.00
 }
 
 # ==========================================================
@@ -145,7 +149,7 @@ datos_deforestacion_exclusiva = {
 col_left, col_center, col_right = st.columns([1.5, 1.4, 1.1], gap="medium")
 
 # ==========================================================
-# PANEL IZQUIERDO: CONTENIDO (Tabla de Contenidos 100% Dinámica)
+# PANEL IZQUIERDO: CONTENIDO (Tabla de Contenidos por Grupos)
 # ==========================================================
 simbologia_sectores = {}
 capas_seleccionadas_nombres = []
@@ -155,16 +159,15 @@ nombre_capa_usuario = ""
 with col_left:
     with st.container(height=780, border=True):
         st.markdown("<h4 style='color: #1e1e1e; margin-top:0; margin-bottom:5px;'>📊 Contents</h4>", unsafe_allow_html=True)
-        st.caption("Auto-discovered Repositories & Advanced Symbology")
+        st.caption("Organización por Grupos Cartográficos Estructurados")
         
-        # --- 1. SECCIÓN CATÁLOGO EXTERNO DE RESPALDO (Subida Manual) ---
+        # --- 1. SECCIÓN CATÁLOGO EXTERNO (Subida Manual) ---
         st.markdown("<div class='toc-header'>📁 Import External Shapefile (.zip)</div>", unsafe_allow_html=True)
         archivo_subido = st.file_uploader(
             "Subir archivo comprimido adicional:",
             type=["zip"],
             label_visibility="collapsed"
         )
-        
         if archivo_subido is not None:
             try:
                 with tempfile.TemporaryDirectory() as tmpdir:
@@ -182,13 +185,13 @@ with col_left:
                     else:
                         st.error("No hay archivo .shp dentro del .zip.")
             except Exception as e:
-                st.error(f"Error procesando archivo externo: {e}")
+                st.error(f"Error externo: {e}")
         
         # --- 2. CAPAS BASE DEL MAPA ---
         st.markdown("<div class='toc-header'>🗺️ Map Layers</div>", unsafe_allow_html=True)
         capa_satelite = st.checkbox("Google Satellite Baseline", value=True)
         
-        # --- 3. CAPA EXTERNA MANUAL DEL USUARIO (Si existe) ---
+        # --- UI DE LA CAPA EXTERNA DEL USUARIO ---
         if gdf_usuario is not None and not gdf_usuario.empty:
             st.markdown("<div class='toc-header'>📂 User Uploaded Layer</div>", unsafe_allow_html=True)
             ver_capa_usuario = st.checkbox(f"✨ {nombre_capa_usuario}", value=True)
@@ -202,79 +205,92 @@ with col_left:
                     with o2: opac_s_u = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key="sl_s_user")
                     simbologia_sectores[nombre_capa_usuario] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
 
-        # --- 4. MAREVAJE AUTOMÁTICO DE CAPAS EN GITHUB (data/) ---
-        st.markdown("<div class='toc-header'>🗂️ Repository Layers (data/*)</div>", unsafe_allow_html=True)
+        # --- 3. SEPARACIÓN Y FILTRADO POR GRUPOS LOGÍSTICOS ---
+        lista_todos_reps = sorted(list(diccionario_capas.keys()))
         
-        if not diccionario_capas:
-            st.info("No se encontraron archivos .zip válidos en la carpeta 'data/'.")
-        else:
-            # Iterar dinámicamente sobre cada capa mapeada en tu carpeta de GitHub
-            for nombre_capa, gdf_capa in diccionario_capas.items():
-                # Formatear el nombre de cara al usuario en la barra lateral
-                nombre_limpio = nombre_capa.replace("_", " ")
-                
-                # Definir colores iniciales predeterminados basados en palabras clave comunes
-                color_default_fill = "#b22222" # Rojo por defecto
-                color_default_stroke = "#5c0000"
-                
-                if "anp" in nombre_capa.lower():
-                    color_default_fill = "#27ae60"
-                    color_default_stroke = "#1e7e34"
-                elif "za" in nombre_capa.lower():
-                    color_default_fill = "#e67e22"
-                    color_default_stroke = "#d35400"
-                elif "pvc" in nombre_capa.lower() and "puntos" in nombre_capa.lower():
-                    color_default_fill = "#ffffff"
-                    color_default_stroke = "#8b0000"
-                elif "otorongo" in nombre_capa.lower():
-                    color_default_fill = "#d35400"
-                    color_default_stroke = "#8e2a00"
-                elif "yarinal" in nombre_capa.lower():
-                    color_default_fill = "#f39c12"
-                    color_default_stroke = "#b77000"
-                elif "azul" in nombre_capa.lower():
-                    color_default_fill = "#2980b9"
-                    color_default_stroke = "#1a4f73"
+        # Clasificamos las capas según su nombre para armar los grupos solicitados
+        capas_ambitos = [c for c in lista_todos_reps if "ambito" in c.lower()]
+        capas_institucionales = [c for c in lista_todos_reps if "anp" in c.lower() or "za_" in c.lower() or "pvc" in c.lower()]
 
-                # Checkbox dinámico para cada archivo del repositorio
-                activo = st.checkbox(f"📁 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
+        # ---- GRUPO 1: ÁMBITOS DE CONTROL (Los 9 Sectores) ----
+        st.markdown("<div class='toc-header'>📂 Ámbitos de Control</div>", unsafe_allow_html=True)
+        if not capas_ambitos:
+            st.caption("No se encontraron ámbitos de control en data/")
+        else:
+            for nombre_capa in capas_ambitos:
+                nombre_limpio = nombre_capa.replace("Ambito_de_control_", "Ambito de control ").replace("_", " ")
+                
+                # Definición de colores por defecto inteligentes para los ámbitos
+                color_fill, color_stroke = "#b22222", "#5c0000" # Rojo genérico por defecto
+                if "azul" in nombre_capa.lower(): color_fill, color_stroke = "#2980b9", "#1a4f73"
+                elif "malinowski" in nombre_capa.lower(): color_fill, color_stroke = "#e74c3c", "#781e1e"
+                elif "otorongo" in nombre_capa.lower(): color_fill, color_stroke = "#d35400", "#8e2a00"
+                elif "yarinal" in nombre_capa.lower(): color_fill, color_stroke = "#f39c12", "#b77000"
+                
+                activo = st.checkbox(f"🔸 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
                 if activo:
                     capas_seleccionadas_nombres.append(nombre_capa)
                     with st.expander(f"🎨 Symbology - {nombre_limpio}"):
                         c1, c2 = st.columns(2)
-                        with c1: fill_c = st.color_picker("Relleno:", color_default_fill, key=f"f_{nombre_capa}")
-                        with c2: stroke_c = st.color_picker("Borde:", color_default_stroke, key=f"s_{nombre_capa}")
+                        with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
+                        with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
                         o1, o2 = st.columns(2)
-                        with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, 0.3 if "anp" not in nombre_capa.lower() else 0.0, step=0.1, key=f"sf_{nombre_capa}")
+                        with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, 0.3, step=0.1, key=f"sf_{nombre_capa}")
                         with o2: opac_s_c = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
-                        
-                        simbologia_sectores[nombre_capa] = {
-                            "fillColor": fill_c, 
-                            "color": stroke_c, 
-                            "fillOpacity": opac_f_c, 
-                            "opacity": opac_s_c
-                        }
+                        simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
+
+        # ---- GRUPO 2: GESTIÓN INSTITUCIONAL (ANP, ZA, PVC) ----
+        st.markdown("<div class='toc-header'>🏛️ Capas Institucionales</div>", unsafe_allow_html=True)
+        if not capas_institucionales:
+            st.caption("No se encontraron capas institucionales en data/")
+        else:
+            for nombre_capa in capas_institucionales:
+                # Renombrar de forma limpia para visualización de la UI
+                if "anp" in nombre_capa.lower(): nombre_limpio = "ANP RNTAM"
+                elif "za" in nombre_capa.lower(): nombre_limpio = "ZA RNTAM"
+                elif "pvc" in nombre_capa.lower(): nombre_limpio = "PVC RNTAM"
+                else: nombre_limpio = nombre_capa.replace("_", " ")
+
+                # Colores institucionales oficiales
+                color_fill, color_stroke = "#27ae60", "#1e7e34" # Verde para ANP
+                opac_f_inicial = 0.0  # ANP transparente al centro por defecto
+                
+                if "za" in nombre_capa.lower():
+                    color_fill, color_stroke = "#e67e22", "#d35400" # Anaranjado para ZA
+                    opac_f_inicial = 0.1
+                elif "pvc" in nombre_capa.lower():
+                    color_fill, color_stroke = "#ffffff", "#8b0000" # Blanco con borde rojo oscuro para puntos
+                    opac_f_inicial = 0.8
+
+                activo = st.checkbox(f"🔰 {nombre_limpio}", value=True, key=f"chk_{nombre_capa}")
+                if activo:
+                    capas_seleccionadas_nombres.append(nombre_capa)
+                    with st.expander(f"🎨 Symbology - {nombre_limpio}"):
+                        c1, c2 = st.columns(2)
+                        with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
+                        with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
+                        o1, o2 = st.columns(2)
+                        with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, opac_f_inicial, step=0.1, key=f"sf_{nombre_capa}")
+                        with o2: opac_s_c = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
+                        simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
 
 # ==========================================================
-# LÓGICA DE CONTROL DINÁMICO DE ENCUADRE Y MÉTRICAS
+# LÓGICA DE CONTROL DE ENCUADRE Y CALCULO CARTOGRÁFICO
 # ==========================================================
 gdfs_activos = [diccionario_capas[n] for n in capas_seleccionadas_nombres if n in diccionario_capas]
 if gdf_usuario is not None and 'ver_capa_usuario' in locals() and ver_capa_usuario:
     gdfs_activos.append(gdf_usuario)
 
 if gdfs_activos:
-    # Combinar extensiones geográficas de todo lo que esté marcado en la TOC
     gdfs_combinados = pd.concat(gdfs_activos, ignore_index=True)
     bounds = gdfs_combinados.total_bounds
     
-    # Calcular métricas basadas en las capas operativas seleccionadas
     ha_afectadas = sum(datos_deforestacion_exclusiva.get(p, 0.0) for p in capas_seleccionadas_nombres)
-    factor = len([n for n in capas_seleccionadas_nombres if "ambito" in n.lower() or "pvc" in n.lower()])
+    factor = len([n for n in capas_seleccionadas_nombres if "ambito" in n.lower()])
     cant_alertas = max(3, factor * 8) if factor > 0 else 3
-    texto_delta = f"{len(gdfs_activos)} capas en visor"
+    texto_delta = f"{len(gdfs_activos)} capas activas"
     
-    # Poblar gráfico de barras dinámicamente
-    datos_grafico = {n.replace("Ambito_de_control_", "PVC "): datos_deforestacion_exclusiva[n] for n in capas_seleccionadas_nombres if n in datos_deforestacion_exclusiva}
+    datos_grafico = {n.replace("Ambito_de_control_", "PVC "): datos_deforestacion_exclusiva[n] for n in capas_seleccionadas_nombres if n in datos_deforestacion_exclusiva and datos_deforestacion_exclusiva[n] > 0}
     
     reporte_dinamico = """
     El análisis geoespacial enfocado de forma exclusiva en los sectores activos del catálogo muestra los escenarios de control vinculados a actividades de minería aurífera ilegal. La cuantificación detallada en estas zonas específicas revela el impacto directo sobre la cobertura boscosa que altera los ecosistemas protegidos dentro del área de influencia analizada.
@@ -282,7 +298,7 @@ if gdfs_activos:
     La información técnica procesada en esta vista proporciona los elementos de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
     """
 else:
-    bounds = [-69.8, -13.1, -69.2, -12.5] # Coordenadas RNTAM base
+    bounds = [-69.8, -13.1, -69.2, -12.5] # Coordenadas base RNTAM
     ha_afectadas = 0.0
     cant_alertas = 0
     texto_delta = "Sin capas activas"
@@ -314,10 +330,9 @@ with col_center:
             gdf_render = diccionario_capas[nombre_capa]
             config = simbologia_sectores[nombre_capa]
             
-            # Tratamiento especial si es una capa de puntos físicos (Bases de Control / PVC)
+            # Tratamiento de capas de puntos (PVC RNTAM / Puntos de Control)
             if not gdf_render.empty and gdf_render.geometry.geom_type.iloc[0] == 'Point':
-                # CORREGIDO: Declaramos y usamos la variable de forma idéntica sin errores de dedo
-                fg_puntos = folium.FeatureGroup(name=nombre_capa.replace("_", " "))
+                fg_puntos = folium.FeatureGroup(name="Puntos de Control")
                 for idx, row in gdf_render.iterrows():
                     if row.geometry:
                         coords = [row.geometry.y, row.geometry.x]
@@ -330,10 +345,10 @@ with col_center:
                             fill=True,
                             fill_color=config["fillColor"],
                             fill_opacity=config["opacity"]
-                        ).add_to(fg_puntos) # <-- Corregido aquí
-                fg_puntos.add_to(m)         # <-- Corregido aquí
+                        ).add_to(fg_puntos)
+                fg_puntos.add_to(m)
             else:
-                # Renderizado estándar para Polígonos o Líneas (Ámbitos, ANP, ZA)
+                # Renderizado estándar para Polígonos (Ámbitos, ANP, ZA)
                 folium.GeoJson(
                     gdf_render,
                     name=f"📂 {nombre_capa.replace('_', ' ')}",
@@ -359,7 +374,7 @@ with col_center:
                 'fillOpacity': f_o,
                 'opacity': s_o
             }
-        ).add_to(m)
+                ).add_to(m)
 
     # Ajuste automático del lente de la cámara web basándose en los polígonos encendidos
     m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
