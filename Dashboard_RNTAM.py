@@ -7,6 +7,8 @@ import glob
 import os
 import zipfile
 import tempfile
+# IMPORTANTE: Requerimos esta librería para habilitar el arrastre físico con tirador (drag handle)
+from streamlit_sortables import sort_items
 
 # ==========================================================
 # CONFIGURACIÓN GENERAL
@@ -46,7 +48,6 @@ st.markdown("""
 .stMetric{
     border-radius:10px;
 }
-/* Espaciado ultra-compacto para los sub-expanders */
 .stExpander {
     margin-bottom: 4px !important;
 }
@@ -69,7 +70,6 @@ st.markdown('<hr class="custom-hr">', unsafe_allow_html=True)
 # 🗺️ LÓGICA DE SANITIZACIÓN GEOESPACIAL
 # ==========================================================
 def sanitizar_geodataframe(gdf):
-    """Elimina o convierte a texto cualquier columna temporal que Folium no pueda serializar"""
     if gdf is None or gdf.empty:
         return gdf
     for col in gdf.select_dtypes(include=['datetime64', 'timedelta64', 'datetimetz']).columns:
@@ -88,7 +88,6 @@ def sanitizar_geodataframe(gdf):
 # ==========================================================
 @st.cache_data
 def escanear_capas_locales(directorio="data"):
-    """Busca dinámicamente todos los archivos .zip dentro de la carpeta data"""
     capas_detectadas = {}
     if not os.path.exists(directorio):
         return capas_detectadas
@@ -103,13 +102,10 @@ def escanear_capas_locales(directorio="data"):
                 capas_detectadas[nombre_base] = gdf
         except:
             pass
-            
     return capas_detectadas
 
-# Carga e inventariado
 diccionario_capas = escanear_capas_locales()
 
-# Base analítica de deforestación por hectáreas
 datos_deforestacion_exclusiva = {
     "Ambito_de_control_Malinowski": 524.30,
     "Ambito_de_control_Otorongo": 341.20,
@@ -122,7 +118,6 @@ datos_deforestacion_exclusiva = {
     "Ambito_de_control_Sandoval": 0.00
 }
 
-# Mapeo inverso amigable para el st.multiselect del Drawing Order
 def obtener_nombre_operativo(internal_name):
     if "pvc" in internal_name.lower(): return "🔰 PVC RNTAM"
     if "anp" in internal_name.lower(): return "🔰 ANP RNTAM"
@@ -142,7 +137,6 @@ col_left, col_center, col_right = st.columns([1, 2, 1], gap="medium")
 simbologia_sectores = {}
 capas_seleccionadas_nombres = []
 
-# Inicialización de la memoria caché para almacenar múltiples shapefiles cargados
 if "capas_usuario" not in st.session_state:
     st.session_state.capas_usuario = {}
 
@@ -152,7 +146,7 @@ with col_left:
         st.caption("Estructura de Desplegables Cartográficos")
         
         # --------------------------------------------------
-        # GRUPO 1: IMPORT EXTERNAL SHAPEFILE (.ZIP) - MULTI-ARCHIVO
+        # GRUPO 1: IMPORT EXTERNAL SHAPEFILE (.ZIP)
         # --------------------------------------------------
         with st.expander("📁 Import External Shapefile (.zip)", expanded=False):
             archivos_subidos = st.file_uploader(
@@ -203,7 +197,7 @@ with col_left:
                             simbologia_sectores[nombre_capa] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
 
         # --------------------------------------------------
-        # GRUPO 2: CAPAS INSTITUCIONALES - CERRADO POR DEFECTO
+        # GRUPO 2: CAPAS INSTITUCIONALES
         # --------------------------------------------------
         with st.expander("🏛️ Capas Institucionales", expanded=False):
             orden_institucional = [
@@ -237,7 +231,7 @@ with col_left:
                             simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
 
         # --------------------------------------------------
-        # GRUPO 3: ÁMBITOS DE CONTROL - CERRADO POR DEFECTO
+        # GRUPO 3: ÁMBITOS DE CONTROL
         # --------------------------------------------------
         with st.expander("📂 Ámbitos de Control", expanded=False):
             orden_ambitos_solicitado = [
@@ -278,10 +272,33 @@ with col_left:
                             simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
 
         # --------------------------------------------------
-        # GRUPO 4: MAP LAYERS - CERRADO POR DEFECTO
+        # GRUPO 4: MAP LAYERS
         # --------------------------------------------------
         with st.expander("🗺️ Map Layers", expanded=False):
             capa_satelite = st.checkbox("Google Satélite", value=False)
+
+        # --------------------------------------------------
+        # ✨ NUEVO GRUPO 5: 🔄 DRAWING ORDER (INTERACTIVO AL FINAL DE CONTENTS)
+        # --------------------------------------------------
+        st.markdown("<br>", unsafe_allow_html=True)
+        with st.expander("🔄 Drawing Order (Capas Activas)", expanded=True):
+            if capas_seleccionadas_nombres:
+                st.caption("Drag ☰ to change overlay order (Top items display in front):")
+                
+                # Mapeamos los nombres internos a los nombres limpios legibles por el usuario
+                mapa_nombres_limpios = {obtener_nombre_operativo(n): n for n in capas_seleccionadas_nombres}
+                lista_etiquetas = list(mapa_nombres_limpios.keys())
+                
+                # Renderiza la lista con el tirador nativo de arrastre (drag-and-drop handle)
+                lista_reordenada_etiquetas = sort_items(lista_etiquetas, direction="vertical", key="sortable_layers")
+                
+                # Folium pinta de abajo hacia arriba. Si el usuario deja un ítem ARRIBA de la lista, 
+                # significa que quiere verlo EN FRENTE. Por ende, invertimos la lista para el bucle de Folium.
+                capas_ordenadas_para_dibujo = [mapa_nombres_limpios[lbl] for lbl in lista_reordenada_etiquetas if lbl in mapa_nombres_limpios]
+                capas_ordenadas_para_dibujo.reverse()
+            else:
+                st.caption("No hay capas seleccionadas en Contents para ordenar.")
+                capas_ordenadas_para_dibujo = []
 
 # ==========================================================
 # LÓGICA DE CONTROL DE ENCUADRE Y CÁLCULO CARTOGRÁFICO
@@ -295,12 +312,10 @@ for n in capas_seleccionadas_nombres:
 if gdfs_activos:
     gdfs_combinados = pd.concat(gdfs_activos, ignore_index=True)
     bounds = gdfs_combinados.total_bounds
-    
     ha_afectadas = sum(datos_deforestacion_exclusiva.get(p, 0.0) for p in capas_seleccionadas_nombres)
     factor = len([n for n in capas_seleccionadas_nombres if "ambito" in n.lower()])
     cant_alertas = max(3, factor * 8) if factor > 0 else 3
     texto_delta = f"{len(gdfs_activos)} capas activas"
-    
     datos_grafico = {n.replace("Ambito_de_control_", "PVC "): datos_deforestacion_exclusiva[n] for n in capas_seleccionadas_nombres if n in datos_deforestacion_exclusiva and datos_deforestacion_exclusiva[n] > 0}
 else:
     bounds = [-69.8, -13.1, -69.2, -12.5] 
@@ -312,7 +327,7 @@ else:
 reporte_dinamico = """
 El análisis geoespacial enfocado de forma exclusiva en los sectores activos del catálogo muestra los escenarios de control vinculados a actividades de minería aurífera ilegal. La cuantificación detallada en estas zonas específicas revela el impacto directo sobre la cobertura boscosa que altera los ecosistemas protegidos dentro del área de influencia analizada.
 
-La información técnica procesada en esta vista proporciona los elements de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
+La información técnica procesada en esta vista proporciona los elementos de convicción geoespaciales necesarios para coordinar con la FEMA y las fuerzas del orden, orientando los recursos logísticos y de personal hacia los puntos calientes con mayor densidad de afectación.
 """
 
 # ==========================================================
@@ -325,24 +340,7 @@ with col_center:
     with m2: st.metric(label="📡 Alertas Críticas Activas", value=str(cant_alertas), delta="Focos Detectados en Capa", delta_color="inverse")
     st.markdown("<br>", unsafe_allow_html=True)
     
-    st.markdown("<h3 style='color:#163b16; margin:0 0 5px 0;'>🗺️ VISOR DE COMANDO Y CONTROL</h3>", unsafe_allow_html=True)
-    
-    # --- NUEVO CONTROL DE ORDEN DE DIBUJO (DRAWING ORDER) ---
-    capas_ordenadas_para_dibujo = []
-    if capas_seleccionadas_nombres:
-        mapa_nombres = {obtener_nombre_operativo(n): n for n in capas_seleccionadas_nombres}
-        
-        # El multiselect arranca precargado con el orden de activación
-        seleccion_orden = st.multiselect(
-            "📚 Orden de dibujo (Las primeras de la lista se pintarán al fondo; las últimas se superpondrán encima):",
-            options=list(mapa_nombres.keys()),
-            default=list(mapa_nombres.keys()),
-            help="Puedes eliminar y volver a agregar etiquetas en este campo para reordenar las capas de mapa tal como en ArcGIS Pro."
-        )
-        # Reconstruimos la lista interna respetando fielmente el orden elegido por el usuario
-        capas_ordenadas_para_dibujo = [mapa_nombres[lbl] for lbl in seleccion_orden if lbl in mapa_nombres]
-    else:
-        capas_ordenadas_para_dibujo = []
+    st.markdown("<h3 style='color:#163b16; margin:0 0 10px 0;'>🗺️ VISOR DE COMANDO Y CONTROL</h3>", unsafe_allow_html=True)
 
     centro_mapa = [(bounds[1] + bounds[3]) / 2, (bounds[0] + bounds[2]) / 2]
     m = folium.Map(location=centro_mapa, zoom_start=11, control_scale=True)
@@ -354,10 +352,11 @@ with col_center:
     fg_puntos = folium.FeatureGroup(name="Puntos de Control")
     hay_puntos = False
     
-    # Renderizado iterativo basado estrictamente en la jerarquía del Drawing Order elegido
-    for nombre_capa in capas_ordenadas_para_dibujo:
-        
-        # CASO A: Capas locales del directorio /data
+    # Si no hay un orden definido por el usuario (ninguna capa activa), usamos el orden por defecto
+    orden_final_renderizado = capas_ordenadas_para_dibujo if capas_seleccionadas_nombres else capas_seleccionadas_nombres
+
+    # Renderizado iterativo basado estrictamente en la jerarquía dinámica del panel izquierdo
+    for nombre_capa in orden_final_renderizado:
         if nombre_capa in diccionario_capas:
             gdf_render = diccionario_capas[nombre_capa]
             config = simbologia_sectores.get(nombre_capa, {"fillColor": "#27ae60", "color": "#1e7e34", "fillOpacity": 0.3, "opacity": 1.0})
@@ -390,7 +389,6 @@ with col_center:
                     }
                 ).add_to(m)
                 
-        # CASO B: Capas dinámicas cargadas por el usuario (.zip)
         elif nombre_capa in st.session_state.capas_usuario:
             gdf_user_render = st.session_state.capas_usuario[nombre_capa]
             cfg_u = simbologia_sectores.get(nombre_capa, {"fillColor": "#9b59b6", "color": "#8e44ad", "fillOpacity": 0.4, "opacity": 1.0})
