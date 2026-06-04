@@ -23,7 +23,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 .block-container{
-    padding-top:3rem;
+    padding-top:2.5rem;
     padding-bottom:1rem;
 }
 .title-container{
