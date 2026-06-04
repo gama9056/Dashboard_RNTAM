@@ -59,7 +59,7 @@ st.markdown("""
 # ==========================================================
 st.markdown("""
 <div class="title-container">
-<h2 style="margin:0; font-weight:bold; color:#8b0000;">
+<h2 style="margin:0; font-weight:bold; color:#2e4a3e;">
 🌿 Dashboard - Reserva Nacional Tambopata 🌿
 </h2>
 </div>
