@@ -12,8 +12,8 @@ import tempfile
 # CONFIGURACIÓN GENERAL
 # ==========================================================
 st.set_page_config(
-    page_title="Dashboard RNTambopata",
-    page_icon="🛡️",
+    page_title="Dashboard RNTAM",
+    page_icon="🌿",
     layout="wide"
 )
 
@@ -23,7 +23,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 .block-container{
-    padding-top:2.5rem;
+    padding-top:3rem;
     padding-bottom:1rem;
 }
 .title-container{
@@ -58,7 +58,7 @@ st.markdown("""
 st.markdown("""
 <div class="title-container">
 <h2 style="margin:0; font-weight:bold; color:#8b0000;">
-🛡️ VISOR OPERATIVO: MONITOREO DE MINERÍA ILEGAL - RNTAM 🛡️
+🌿 Dashboard - Reserva Nacional Tambopata 🌿
 </h2>
 </div>
 """, unsafe_allow_html=True)
