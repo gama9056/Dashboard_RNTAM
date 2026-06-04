@@ -26,15 +26,17 @@ st.markdown("""
     padding-top:3rem;
     padding-bottom:1rem;
 }
-.title-container{
-    border:1px solid #8b0000;
-    border-radius:12px;
-    background:#fff5f5;
-    height:60px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin-bottom:10px;
+.title-container {
+    border: 1px solid #c2d5c2;      /* Verde salvia suave y sutil */
+    border-radius: 12px;
+    background: #f7faf7;            /* Fondo blanco roto con matiz verde */
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    padding: 0 20px;                /* Evita que el texto toque los bordes */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02); /* Sombra casi invisible para dar profundidad */
 }
 .custom-hr{
     border:0;
