@@ -199,7 +199,7 @@ with col_left:
         # --------------------------------------------------
         # GRUPO 2: CAPAS INSTITUCIONALES
         # --------------------------------------------------
-        with st.expander("🏛️ Capas Institucionales", expanded=True):
+        with st.expander("🏛️ Capas Institucionales", expanded=False):
             orden_institucional = [
                 {"patron": "pvc", "limpio": "PVC RNTAM", "fill": "#ffffff", "stroke": "#8b0000", "opac": 0.8},
                 {"patron": "anp", "limpio": "ANP RNTAM", "fill": "#27ae60", "stroke": "#1e7e34", "opac": 0.0},
@@ -237,7 +237,7 @@ with col_left:
         # --------------------------------------------------
         # GRUPO 3: ÁMBITOS DE CONTROL
         # --------------------------------------------------
-        with st.expander("📂 Ámbitos de Control", expanded=True):
+        with st.expander("📂 Ámbitos de Control", expanded=False):
             orden_ambitos_solicitado = [
                 "otorongo", "azul", "yarinal", "malinowski", 
                 "la_torre", "jorge_chavez", "sandoval", "briolo", "huisene"
