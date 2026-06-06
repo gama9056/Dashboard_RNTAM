@@ -10,6 +10,7 @@ import tempfile
 
 # ==========================================================
 # CONFIGURACIÓN GENERAL
+# URL de despliegue sugerida: deepsentinel-jackson-gamaniel-carmona-manturano
 # ==========================================================
 st.set_page_config(
     page_title="Dashboard RNTAM",
@@ -18,7 +19,7 @@ st.set_page_config(
 )
 
 # ==========================================================
-# ESTILOS CSS (Estilo Interfaz ArcGIS Pro Avanzado)
+# ESTILOS CSS (Estilo Interfaz Avanzado)
 # ==========================================================
 st.markdown("""
 <style>
@@ -27,16 +28,16 @@ st.markdown("""
     padding-bottom:1rem;
 }
 .title-container {
-    border: 1px solid #c2d5c2;      /* Verde salvia suave y sutil */
+    border: 1px solid #c2d5c2;
     border-radius: 12px;
-    background: #f7faf7;            /* Fondo blanco roto con matiz verde */
+    background: #f7faf7;
     height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 10px;
-    padding: 0 20px;                /* Evita que el texto toque los bordes */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02); /* Sombra casi invisible para dar profundidad */
+    padding: 0 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 .custom-hr{
     border:0;
@@ -47,9 +48,6 @@ st.markdown("""
 }
 .stMetric{
     border-radius:10px;
-}
-.stExpander {
-    margin-bottom: 4px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -132,7 +130,7 @@ def obtener_nombre_operativo(internal_name):
 col_left, col_center, col_right = st.columns([1, 2, 1], gap="medium")
 
 # ==========================================================
-# PANEL IZQUIERDO: CONTENIDO (Tabla de Contenidos Estructurada)
+# PANEL IZQUIERDO: CONTENIDO
 # ==========================================================
 simbologia_sectores = {}
 capas_seleccionadas_nombres = []
@@ -143,14 +141,14 @@ if "capas_usuario" not in st.session_state:
 with col_left:
     with st.container(height=780, border=True):
         st.markdown("<h4 style='color: #1e1e1e; margin-top:0; margin-bottom:5px;'>📊 Contents</h4>", unsafe_allow_html=True)
-        st.caption("Estructura de Desplegables Cartográficos")
+        st.caption("Estructura Cartográfica")
         
         # --------------------------------------------------
         # GRUPO 1: IMPORT EXTERNAL SHAPEFILE (.ZIP)
         # --------------------------------------------------
         with st.expander("📁 Import External Shapefile (.zip)", expanded=False):
             archivos_subidos = st.file_uploader(
-                "Subir uno o varios archivos comprimidos adicionales:",
+                "Subir capas adicionales:",
                 type=["zip"],
                 key="uploader_manual",
                 accept_multiple_files=True
@@ -175,31 +173,33 @@ with col_left:
                                 if nombre_capa_temp not in st.session_state.capas_usuario:
                                     st.session_state.capas_usuario[nombre_capa_temp] = gdf_temp
                                     st.toast(f"Capa '{nombre_capa_temp}' agregada.", icon="✨")
-                            else:
-                                st.error(f"No hay archivo .shp dentro de {archivo.name}")
                     except Exception as e:
-                        st.error(f"Error procesando {archivo.name}: {e}")
+                        st.error(f"Error: {e}")
             
             if st.session_state.capas_usuario:
                 st.markdown("---")
-                st.caption("📦 Capas Temporales Cargadas")
-                for nombre_capa, gdf_guardado in list(st.session_state.capas_usuario.items()):
-                    ver_capa = st.checkbox(f"✨ {nombre_capa}", value=False, key=f"chk_user_{nombre_capa}")
+                st.caption("📦 Capas Temporales")
+                for nombre_capa in list(st.session_state.capas_usuario.keys()):
+                    c_chk, c_cfg = st.columns([0.8, 0.2])
+                    with c_chk:
+                        ver_capa = st.checkbox(f"✨ {nombre_capa}", value=False, key=f"chk_user_{nombre_capa}")
+                    with c_cfg:
+                        with st.popover("⚙️"):
+                            st.markdown("**Simbología**")
+                            c1, c2 = st.columns(2)
+                            with c1: fill_u = st.color_picker("Relleno", "#9b59b6", key=f"f_user_{nombre_capa}")
+                            with c2: stroke_u = st.color_picker("Borde", "#8e44ad", key=f"s_user_{nombre_capa}")
+                            opac_f_u = st.slider("Opacidad Relleno", 0.0, 1.0, 0.4, step=0.1, key=f"sf_user_{nombre_capa}")
+                            opac_s_u = st.slider("Opacidad Borde", 0.0, 1.0, 1.0, step=0.1, key=f"ss_user_{nombre_capa}")
+                    
+                    simbologia_sectores[nombre_capa] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
                     if ver_capa:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        with st.expander(f"🎨 Simbología - {nombre_capa}", expanded=False, key=f"exp_user_{nombre_capa}"):
-                            c1, c2 = st.columns(2)
-                            with c1: fill_u = st.color_picker("Relleno:", "#9b59b6", key=f"f_user_{nombre_capa}")
-                            with c2: stroke_u = st.color_picker("Borde:", "#8e44ad", key=f"s_user_{nombre_capa}")
-                            o1, o2 = st.columns(2)
-                            with o1: opac_f_u = st.slider("Opac. Relleno:", 0.0, 1.0, 0.4, step=0.1, key=f"sf_user_{nombre_capa}")
-                            with o2: opac_s_u = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_user_{nombre_capa}")
-                            simbologia_sectores[nombre_capa] = {"fillColor": fill_u, "color": stroke_u, "fillOpacity": opac_f_u, "opacity": opac_s_u}
 
         # --------------------------------------------------
         # GRUPO 2: CAPAS INSTITUCIONALES
         # --------------------------------------------------
-        with st.expander("🏛️ Capas Institucionales", expanded=False):
+        with st.expander("🏛️ Capas Institucionales", expanded=True):
             orden_institucional = [
                 {"patron": "pvc", "limpio": "PVC RNTAM", "fill": "#ffffff", "stroke": "#8b0000", "opac": 0.8},
                 {"patron": "anp", "limpio": "ANP RNTAM", "fill": "#27ae60", "stroke": "#1e7e34", "opac": 0.0},
@@ -215,25 +215,29 @@ with col_left:
                         capas_encontradas_inst.append((nombre_capa, item))
             
             if not capas_encontradas_inst:
-                st.caption("No se encontraron capas institucionales en la carpeta data/")
+                st.caption("No se encontraron capas en data/")
             else:
                 for nombre_capa, info in capas_encontradas_inst:
-                    activo = st.checkbox(f"🔰 {info['limpio']}", value=False, key=f"chk_{nombre_capa}")
+                    c_chk, c_cfg = st.columns([0.8, 0.2])
+                    with c_chk:
+                        activo = st.checkbox(f"🔰 {info['limpio']}", value=False, key=f"chk_{nombre_capa}")
+                    with c_cfg:
+                        with st.popover("⚙️"):
+                            st.markdown("**Simbología**")
+                            c1, c2 = st.columns(2)
+                            with c1: fill_c = st.color_picker("Relleno", info["fill"], key=f"f_{nombre_capa}")
+                            with c2: stroke_c = st.color_picker("Borde", info["stroke"], key=f"s_{nombre_capa}")
+                            opac_f_c = st.slider("Opac. Relleno", 0.0, 1.0, info["opac"], step=0.1, key=f"sf_{nombre_capa}")
+                            opac_s_c = st.slider("Opac. Borde", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
+                            
+                    simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        with st.expander(f"🎨 Symbology - {info['limpio']}", expanded=False, key=f"exp_inst_{nombre_capa}"):
-                            c1, c2 = st.columns(2)
-                            with c1: fill_c = st.color_picker("Relleno:", info["fill"], key=f"f_{nombre_capa}")
-                            with c2: stroke_c = st.color_picker("Borde:", info["stroke"], key=f"s_{nombre_capa}")
-                            o1, o2 = st.columns(2)
-                            with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, info["opac"], step=0.1, key=f"sf_{nombre_capa}")
-                            with o2: opac_s_c = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
-                            simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
 
         # --------------------------------------------------
         # GRUPO 3: ÁMBITOS DE CONTROL
         # --------------------------------------------------
-        with st.expander("📂 Ámbitos de Control", expanded=False):
+        with st.expander("📂 Ámbitos de Control", expanded=True):
             orden_ambitos_solicitado = [
                 "otorongo", "azul", "yarinal", "malinowski", 
                 "la_torre", "jorge_chavez", "sandoval", "briolo", "huisene"
@@ -248,28 +252,32 @@ with col_left:
                         capas_ambitos_ordenadas.append(nombre_capa)
             
             if not capas_ambitos_ordenadas:
-                st.caption("No se encontraron ámbitos de control en la carpeta data/")
+                st.caption("No se encontraron ámbitos en data/")
             else:
                 for nombre_capa in capas_ambitos_ordenadas:
                     nombre_limpio = nombre_capa.replace("Ambito_de_control_", "Ámbito de control ").replace("_", " ")
-                    
                     color_fill, color_stroke = "#b22222", "#5c0000"
+                    
                     if "azul" in nombre_capa.lower(): color_fill, color_stroke = "#2980b9", "#1a4f73"
                     elif "malinowski" in nombre_capa.lower(): color_fill, color_stroke = "#e74c3c", "#781e1e"
                     elif "otorongo" in nombre_capa.lower(): color_fill, color_stroke = "#d35400", "#8e2a00"
                     elif "yarinal" in nombre_capa.lower(): color_fill, color_stroke = "#f39c12", "#b77000"
                     
-                    activo = st.checkbox(f"🔸 {nombre_limpio}", value=False, key=f"chk_{nombre_capa}")
+                    c_chk, c_cfg = st.columns([0.8, 0.2])
+                    with c_chk:
+                        activo = st.checkbox(f"🔸 {nombre_limpio}", value=False, key=f"chk_{nombre_capa}")
+                    with c_cfg:
+                        with st.popover("⚙️"):
+                            st.markdown("**Simbología**")
+                            c1, c2 = st.columns(2)
+                            with c1: fill_c = st.color_picker("Relleno", color_fill, key=f"f_{nombre_capa}")
+                            with c2: stroke_c = st.color_picker("Borde", color_stroke, key=f"s_{nombre_capa}")
+                            opac_f_c = st.slider("Opac. Relleno", 0.0, 1.0, 0.3, step=0.1, key=f"sf_{nombre_capa}")
+                            opac_s_c = st.slider("Opac. Borde", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
+                            
+                    simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
                     if activo:
                         capas_seleccionadas_nombres.append(nombre_capa)
-                        with st.expander(f"🎨 Symbology - {nombre_limpio}", expanded=False, key=f"exp_amb_{nombre_capa}"):
-                            c1, c2 = st.columns(2)
-                            with c1: fill_c = st.color_picker("Relleno:", color_fill, key=f"f_{nombre_capa}")
-                            with c2: stroke_c = st.color_picker("Borde:", color_stroke, key=f"s_{nombre_capa}")
-                            o1, o2 = st.columns(2)
-                            with o1: opac_f_c = st.slider("Opac. Relleno:", 0.0, 1.0, 0.3, step=0.1, key=f"sf_{nombre_capa}")
-                            with o2: opac_s_c = st.slider("Opac. Borde:", 0.0, 1.0, 1.0, step=0.1, key=f"ss_{nombre_capa}")
-                            simbologia_sectores[nombre_capa] = {"fillColor": fill_c, "color": stroke_c, "fillOpacity": opac_f_c, "opacity": opac_s_c}
 
         # --------------------------------------------------
         # GRUPO 4: MAP LAYERS
@@ -278,34 +286,30 @@ with col_left:
             capa_satelite = st.checkbox("Google Satélite", value=False)
 
         # --------------------------------------------------
-        # ✨ GRUPO 5: 🔄 DRAWING ORDER (NATIVO, SIN LIBRERÍAS EXTERNAS)
+        # ✨ GRUPO 5: 🔄 DRAWING ORDER (MULTISELECT)
         # --------------------------------------------------
         st.markdown("<br>", unsafe_allow_html=True)
-        with st.expander("🔄 Drawing Order (Capas Activas)", expanded=True):
+        with st.expander("🔄 Drawing Order", expanded=True):
             capas_ordenadas_para_dibujo = []
             if capas_seleccionadas_nombres:
-                st.caption("Asigna la prioridad de dibujo (Números más altos van EN FRENTE/ARRIBA):")
+                st.caption("Orden de dibujo (de izquierda a derecha).")
                 
-                mapa_nombres_limpios = {obtener_nombre_operativo(n): n for n in capas_seleccionadas_nombres}
-                prioridades = {}
+                # Crear diccionario inverso para mostrar nombres amigables
+                mapa_nombres_limpios = {n: obtener_nombre_operativo(n) for n in capas_seleccionadas_nombres}
+                mapa_inverso = {v: k for k, v in mapa_nombres_limpios.items()}
+                nombres_amigables = list(mapa_nombres_limpios.values())
                 
-                # Creamos selectores numéricos con el grip icon simulado (⋮⋮) para cada capa activa
-                for idx, etiqueta in enumerate(mapa_nombres_limpios.keys()):
-                    # El valor por defecto se incrementa para simular el orden secuencial natural
-                    prioridades[etiqueta] = st.number_input(
-                        f"⋮⋮ {etiqueta}", 
-                        min_value=1, 
-                        max_value=20, 
-                        value=idx + 1, 
-                        key=f"prioridad_{mapa_nombres_limpios[etiqueta]}"
-                    )
+                orden_dibujo_usuario = st.multiselect(
+                    "Orden de capas a renderizar:",
+                    options=nombres_amigables,
+                    default=nombres_amigables,
+                    key="multiselect_orden",
+                    label_visibility="collapsed"
+                )
                 
-                # Ordenamos las capas basándonos en la prioridad numérica ingresada por el usuario
-                etiquetas_ordenadas = sorted(prioridades, key=prioridades.get)
-                capas_ordenadas_para_dibujo = [mapa_nombres_limpios[lbl] for lbl in etiquetas_ordenadas if lbl in mapa_nombres_limpios]
+                capas_ordenadas_para_dibujo = [mapa_inverso[lbl] for lbl in orden_dibujo_usuario]
             else:
-                st.caption("No hay capas seleccionadas en Contents para ordenar.")
-                capas_ordenadas_para_dibujo = []
+                st.caption("Activa capas para definir su orden.")
 
 # ==========================================================
 # LÓGICA DE CONTROL DE ENCUADRE Y CÁLCULO CARTOGRÁFICO
@@ -356,13 +360,11 @@ with col_center:
         url_satelite = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
         folium.TileLayer(tiles=url_satelite, attr="Google Maps Satellite", name="Vista Satelital Operativa", overlay=False, control=False).add_to(m)
     
-    # CORRECCIÓN DE BUG: Definición correcta del Feature Group para los Puntos de Control
     fg_puntos = folium.FeatureGroup(name="Puntos de Control")
     hay_puntos = False
     
     orden_final_renderizado = capas_ordenadas_para_dibujo if capas_seleccionadas_nombres else capas_seleccionadas_nombres
 
-    # Renderizado secuencial basado en el orden prioritario del usuario
     for nombre_capa in orden_final_renderizado:
         if nombre_capa in diccionario_capas:
             gdf_render = diccionario_capas[nombre_capa]
