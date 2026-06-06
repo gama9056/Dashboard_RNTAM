@@ -288,8 +288,8 @@ with col_left:
         # --------------------------------------------------
         # ✨ GRUPO 5: 🔄 DRAWING ORDER (MULTISELECT)
         # --------------------------------------------------
-        st.markdown("<br>", unsafe_allow_html=False)
-        with st.expander("🔄 Drawing Order", expanded=True):
+        st.markdown("<br>", unsafe_allow_html=True)
+        with st.expander("🔄 Drawing Order", expanded=False):
             capas_ordenadas_para_dibujo = []
             if capas_seleccionadas_nombres:
                 st.caption("Orden de dibujo (de izquierda a derecha).")
