@@ -199,7 +199,7 @@ with col_left:
         # --------------------------------------------------
         # GRUPO 2: CAPAS INSTITUCIONALES
         # --------------------------------------------------
-        with st.expander("🏛️ Capas Institucionales", expanded=False):
+        with st.expander("🏛️ Capas Institucionales", expanded=True):
             orden_institucional = [
                 {"patron": "pvc", "limpio": "PVC RNTAM", "fill": "#ffffff", "stroke": "#8b0000", "opac": 0.8},
                 {"patron": "anp", "limpio": "ANP RNTAM", "fill": "#27ae60", "stroke": "#1e7e34", "opac": 0.0},
@@ -237,7 +237,7 @@ with col_left:
         # --------------------------------------------------
         # GRUPO 3: ÁMBITOS DE CONTROL
         # --------------------------------------------------
-        with st.expander("📂 Ámbitos de Control", expanded=False):
+        with st.expander("📂 Ámbitos de Control", expanded=True):
             orden_ambitos_solicitado = [
                 "otorongo", "azul", "yarinal", "malinowski", 
                 "la_torre", "jorge_chavez", "sandoval", "briolo", "huisene"
@@ -289,7 +289,7 @@ with col_left:
         # ✨ GRUPO 5: 🔄 DRAWING ORDER (MULTISELECT)
         # --------------------------------------------------
         st.markdown("<br>", unsafe_allow_html=True)
-        with st.expander("🔄 Drawing Order", expanded=False):
+        with st.expander("🔄 Drawing Order", expanded=True):
             capas_ordenadas_para_dibujo = []
             if capas_seleccionadas_nombres:
                 st.caption("Orden de dibujo (de izquierda a derecha).")
